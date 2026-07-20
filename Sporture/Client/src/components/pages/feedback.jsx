@@ -1,12 +1,12 @@
 // Client/src/components/pages/feedback.jsx
 import React, { useState, useEffect } from "react";
 import "./Feedback.css";
-import axios from "axios";
+import { getFeedback, postFeedback } from "../utils/api";
 
 const Feedback = () => {
+  // Name and email are no longer collected here — the server derives the
+  // author from the logged-in user so feedback can't be posted as someone else.
   const [form, setForm] = useState({
-    name: "",
-    email: "",
     rating: 0,
     comment: "",
   });
@@ -17,7 +17,7 @@ const Feedback = () => {
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/feedback");
+        const res = await getFeedback();
         setFeedbackList(res.data);
       } catch (err) {
         console.error("Error fetching feedback:", err);
@@ -38,19 +38,19 @@ const Feedback = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.name || !form.email || !form.comment || form.rating === 0) {
-      setMessage("⚠️ Please fill in all fields before submitting.");
+    if (!form.comment || form.rating === 0) {
+      setMessage("⚠️ Please add a rating and a comment before submitting.");
       return;
     }
 
     try {
-      const res = await axios.post("http://localhost:5000/api/feedback", form);
+      const res = await postFeedback(form);
       setFeedbackList((prev) => [res.data, ...prev]);
-      setForm({ name: "", email: "", rating: 0, comment: "" });
+      setForm({ rating: 0, comment: "" });
       setMessage("✅ Thank you for your feedback!");
     } catch (err) {
       console.error("Error submitting feedback:", err);
-      setMessage("❌ Failed to submit feedback. Try again later.");
+      setMessage(err.response?.data?.message || "❌ Failed to submit feedback. Try again later.");
     }
   };
 
@@ -61,24 +61,6 @@ const Feedback = () => {
 
         {/* Feedback Form */}
         <form className="feedback-form" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            name="name"
-            placeholder="Your Name"
-            value={form.name}
-            onChange={handleChange}
-            className="feedback-input"
-          />
-
-          <input
-            type="email"
-            name="email"
-            placeholder="Your Email"
-            value={form.email}
-            onChange={handleChange}
-            className="feedback-input"
-          />
-
           <div className="rating-section">
             <label>Rate your experience:</label>
             <div className="stars">

@@ -1,68 +1,74 @@
 // server/controllers/authController.js
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
+import { AppError } from "../utils/AppError.js";
+
+const signToken = (userId) =>
+  jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || "1d",
+  });
 
 /* ----------------------- REGISTER ----------------------- */
-export const register = async (req, res) => {
+export const register = async (req, res, next) => {
   try {
     const { name, email, password, favSports, skillLevel } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      throw new AppError("An account with that email already exists", 409);
     }
 
-    const user = new User({ name, email, password, favSports, skillLevel });
-    await user.save();
+    // Password is hashed by the pre-save hook on the User model.
+    const user = await User.create({ name, email, password, favSports, skillLevel });
 
-    const safeUser = user.toObject ? user.toObject() : user;
+    const safeUser = user.toObject();
     delete safeUser.password;
 
-    res.status(201).json({ success: true, user: safeUser });
+    res.status(201).json({
+      success: true,
+      token: signToken(user._id),
+      user: safeUser,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 
 /* ------------------------ LOGIN ------------------------ */
-export const login = async (req, res) => {
+export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
 
-    if (!user || user.password !== password) {
-      return res.status(401).json({ message: "Invalid credentials" });
+    // password has `select: false` on the schema, so ask for it explicitly.
+    const user = await User.findOne({ email }).select("+password");
+
+    // Same message and code for "no such user" and "wrong password" so the
+    // endpoint can't be used to enumerate registered emails.
+    if (!user || !(await user.comparePassword(password))) {
+      throw new AppError("Invalid credentials", 401);
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
-
-    const safeUser = user.toObject ? user.toObject() : user;
+    const safeUser = user.toObject();
     delete safeUser.password;
 
     res.json({
       success: true,
-      token,
+      token: signToken(user._id),
       user: safeUser,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 
 /* -------------------- CURRENT USER -------------------- */
-export const getCurrentUser = async (req, res) => {
+export const getCurrentUser = async (req, res, next) => {
   try {
     if (!req.user) {
-      return res.status(404).json({ message: "User not found" });
+      throw new AppError("User not found", 404);
     }
-
-    const user = req.user.toObject ? req.user.toObject() : req.user;
-    delete user.password;
-
-    res.json({ success: true, user });
+    res.json({ success: true, user: req.user });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };

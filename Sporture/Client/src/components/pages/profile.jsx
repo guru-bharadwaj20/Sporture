@@ -1,12 +1,11 @@
 // src/components/pages/Profile.jsx
 import React, { useState, useEffect } from "react";
-import { getCurrentUser, updateUserById, getJoinedEvents } from "../utils/api";
+import { getCurrentUser, updateUserById, getJoinedEvents, uploadUserPhoto } from "../utils/api";
 import "./Profile.css";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [editMode, setEditMode] = useState(false);
-  const [newPhoto, setNewPhoto] = useState(null);
   const [activeTab, setActiveTab] = useState("upcoming");
   const [loading, setLoading] = useState(true);
 
@@ -75,15 +74,10 @@ const Profile = () => {
   const file = e.target.files[0];
   if (!file || !user) return;
 
-  const formData = new FormData();
-  formData.append("photo", file);
-
   try {
-    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"}/api/users/${user._id}/upload-photo`, {
-  method: "POST",
-  body: formData,
-});
-    const data = await res.json();
+    // Goes through the shared api client so the auth token is attached; the
+    // upload route now requires it.
+    const { data } = await uploadUserPhoto(user._id, file);
 
     if (data.user) {
       setUser(data.user);
@@ -92,7 +86,7 @@ const Profile = () => {
     }
   } catch (err) {
     console.error("❌ Upload failed:", err);
-    alert("Failed to upload image.");
+    alert(err.response?.data?.message || "Failed to upload image.");
   }
 };
 
@@ -100,13 +94,21 @@ const Profile = () => {
     e.preventDefault();
     if (!user) return;
     try {
-      const res = await updateUserById(user._id, user);
+      // Send only the fields a user is allowed to edit. Anything else (rating,
+      // email, stats) is rejected server-side anyway.
+      const res = await updateUserById(user._id, {
+        name: user.name,
+        favSports: user.favSports,
+        skillLevel: user.skillLevel,
+        city: user.city,
+        bio: user.bio,
+      });
       setUser(res.data);
       localStorage.setItem("user", JSON.stringify(res.data));
       alert("✅ Profile updated successfully!");
     } catch (err) {
       console.error("Error updating profile:", err);
-      alert("❌ Failed to update profile.");
+      alert(err.response?.data?.message || "❌ Failed to update profile.");
     } finally {
       setEditMode(false);
     }
@@ -123,7 +125,7 @@ const Profile = () => {
         {/* Header */}
         <header className="profile-header">
           <div className="profile-photo-box">
-            <img src={newPhoto || user.photoURL || 'https://via.placeholder.com/150'} alt="profile" className="profile-photo" />
+            <img src={user.photoURL || 'https://via.placeholder.com/150'} alt="profile" className="profile-photo" />
             {editMode && (
               <input type="file" accept="image/*" className="photo-upload" onChange={handlePhotoChange} />
             )}

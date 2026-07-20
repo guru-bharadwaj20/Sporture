@@ -23,6 +23,13 @@ const feedbackSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    // Author of the feedback, used for ownership checks on delete.
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
   },
   { timestamps: true }
 );

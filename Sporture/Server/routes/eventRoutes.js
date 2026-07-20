@@ -1,56 +1,47 @@
 import express from "express";
-import mongoose from "mongoose";
 import Event from "../models/Event.js";
 import User from "../models/userModel.js"; // <-- IMPORT USER MODEL
 import auth from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
+import {
+  createEventSchema,
+  eventQuerySchema,
+  idParamSchema,
+} from "../validators/schemas.js";
+import { AppError } from "../utils/AppError.js";
 
 const router = express.Router();
 
-/* Utility: Normalize IDs */
-const toId = (val) => {
-  if (!val) return null;
-  if (typeof val === "string") return val;
-  if (val._id) return val._id.toString();
-  if (val.toString) return val.toString();
-  return null;
-};
-
 /* -------------------------- CREATE EVENT -------------------------- */
-router.post("/", auth, async (req, res) => {
+router.post("/", auth, validate(createEventSchema), async (req, res, next) => {
   try {
     const { title, sport, date, location, maxPlayers } = req.body;
 
-    if (!title || !sport || !date || !location || !maxPlayers) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    const newEvent = new Event({
+    const event = await Event.create({
       title, sport, date, location, maxPlayers,
       createdBy: req.user._id,
       currentPlayers: [req.user._id],
     });
 
-    const event = await newEvent.save();
-
-    // --- FIX: Increment the creator's eventsHosted count ---
     await User.findByIdAndUpdate(req.user._id, { $inc: { eventsHosted: 1, gamesPlayed: 1 } });
-    // --- END OF FIX ---
 
     await event.populate("createdBy", "name");
     res.status(201).json(event);
   } catch (err) {
-    console.error("❌ Error creating event:", err);
-    res.status(500).json({ message: "Server Error", error: err.message });
+    next(err);
   }
 });
 
 /* --------------------------- GET EVENTS --------------------------- */
-router.get("/", async (req, res) => {
+router.get("/", validate(eventQuerySchema, "query"), async (req, res, next) => {
   try {
     const { sport } = req.query;
     const query = {};
-    if (sport && sport.trim() !== "") {
-      query.sport = { $regex: `^${sport.trim()}$`, $options: "i" };
+    if (sport) {
+      // Escape regex metacharacters so a value like ".*" can't match everything
+      // or cause catastrophic backtracking.
+      const escaped = sport.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      query.sport = { $regex: `^${escaped}$`, $options: "i" };
     }
     const events = await Event.find(query)
       .populate("createdBy", "name")
@@ -58,13 +49,12 @@ router.get("/", async (req, res) => {
       .sort({ date: 1 });
     res.json(events);
   } catch (err) {
-    console.error("❌ Error fetching events:", err);
-    res.status(500).json({ message: "Server Error", error: err.message });
+    next(err);
   }
 });
 
 /* ----------------------- GET JOINED/HOSTED EVENTS ----------------------- */
-router.get("/joined", auth, async (req, res) => {
+router.get("/joined", auth, async (req, res, next) => {
   try {
     const userId = req.user._id;
     const events = await Event.find({
@@ -75,75 +65,73 @@ router.get("/joined", auth, async (req, res) => {
       .sort({ date: 1 });
     res.json(events);
   } catch (err) {
-    console.error("❌ Error fetching joined events:", err);
-    res.status(500).json({ message: "Server Error", error: err.message });
+    next(err);
   }
 });
 
 /* ---------------------------- JOIN EVENT ---------------------------- */
-router.post("/:id/join", auth, async (req, res) => {
+router.post("/:id/join", auth, validate(idParamSchema, "params"), async (req, res, next) => {
   try {
     const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid event ID format" });
-    }
-    const event = await Event.findById(id)
+    const userId = req.user._id;
+
+    // Single atomic operation: the capacity and duplicate checks are part of
+    // the update's filter, so two simultaneous joins cannot both succeed on
+    // the final slot. A read-then-write would let the event exceed maxPlayers.
+    const event = await Event.findOneAndUpdate(
+      {
+        _id: id,
+        createdBy: { $ne: userId },
+        currentPlayers: { $ne: userId },
+        date: { $gt: new Date() },
+        $expr: { $lt: [{ $size: "$currentPlayers" }, "$maxPlayers"] },
+      },
+      { $addToSet: { currentPlayers: userId } },
+      { new: true }
+    )
       .populate("createdBy", "name")
       .populate("currentPlayers", "name");
-    if (!event) return res.status(404).json({ message: "Event not found" });
 
-    const userId = req.user._id.toString();
-    const createdById = toId(event.createdBy);
-    if (createdById && createdById === userId) {
-      return res.status(400).json({ message: "You are the host of this event." });
-    }
-    const alreadyJoined = (event.currentPlayers || []).some(
-      (p) => toId(p) === userId
-    );
-    if (alreadyJoined) {
-      return res.status(400).json({ message: "You have already joined this event." });
-    }
-    if (event.currentPlayers.length >= event.maxPlayers) {
-      return res.status(400).json({ message: "Event is already full." });
+    // The filter matched nothing — re-read to report *why* it failed.
+    if (!event) {
+      const existing = await Event.findById(id);
+      if (!existing) throw new AppError("Event not found", 404);
+      if (existing.createdBy.toString() === userId.toString()) {
+        throw new AppError("You are the host of this event.", 400);
+      }
+      if (existing.currentPlayers.some((p) => p.toString() === userId.toString())) {
+        throw new AppError("You have already joined this event.", 400);
+      }
+      if (existing.date <= new Date()) {
+        throw new AppError("This event has already started.", 400);
+      }
+      throw new AppError("Event is already full.", 400);
     }
 
-    event.currentPlayers.push(req.user._id);
-    await event.save();
-    
-    // --- FIX: Increment the user's gamesPlayed count ---
-    await User.findByIdAndUpdate(req.user._id, { $inc: { gamesPlayed: 1 } });
-    // --- END OF FIX ---
+    await User.findByIdAndUpdate(userId, { $inc: { gamesPlayed: 1 } });
 
-    await event.populate("currentPlayers", "name");
-    console.log(`✅ ${req.user.name} joined event "${event.title}"`);
     return res.json({
       success: true,
-      message: `✅ You have successfully joined "${event.title}"!`,
+      message: `You have successfully joined "${event.title}"!`,
       event,
     });
   } catch (err) {
-    console.error("❌ Error joining event:", err);
-    res.status(500).json({ message: "Server Error", error: err.message });
+    next(err);
   }
 });
 
 /* --------------------------- GET SINGLE EVENT --------------------------- */
-router.get("/:id", async (req, res) => {
+router.get("/:id", validate(idParamSchema, "params"), async (req, res, next) => {
   try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid event ID format" });
-    }
-    const event = await Event.findById(id)
-      .populate("createdBy", "name email")
-      .populate("currentPlayers", "name email");
-    if (!event) {
-      return res.status(404).json({ message: "Event not found" });
-    }
+    // Emails are not exposed here — this route is public, and the participant
+    // list of an event should not leak contact details.
+    const event = await Event.findById(req.params.id)
+      .populate("createdBy", "name")
+      .populate("currentPlayers", "name");
+    if (!event) throw new AppError("Event not found", 404);
     res.json(event);
   } catch (err) {
-    console.error("❌ Error fetching event:", err);
-    res.status(500).json({ message: "Server Error", error: err.message });
+    next(err);
   }
 });
 

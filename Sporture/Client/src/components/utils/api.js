@@ -2,8 +2,12 @@
 
 import axios from "axios";
 
+// Configured per-environment via .env (see .env.example). Falls back to the
+// local dev server so a fresh clone works without setup.
+export const API_ORIGIN = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: `${API_ORIGIN}/api`,
 });
 
 // Request interceptor - Add token to requests
@@ -38,10 +42,15 @@ export const loginUser = (credentials) => api.post("/auth/login", credentials);
 export const getCurrentUser = () => api.get("/auth/me");
 
 // ---------- USERS ----------
-export const getUser = (email) => api.get(`/users/${email}`);
-export const updateUser = (email, data) => api.put(`/users/${email}`, data);
 export const getUserById = (id) => api.get(`/users/${id}`);
 export const updateUserById = (id, data) => api.put(`/users/${id}`, data);
+
+// Sends the auth token via the shared interceptor; a bare fetch() would not.
+export const uploadUserPhoto = (id, file) => {
+  const formData = new FormData();
+  formData.append("photo", file);
+  return api.post(`/users/${id}/upload-photo`, formData);
+};
 
 // ---------- FEEDBACK ----------
 export const getFeedback = () => api.get("/feedback");

@@ -11,7 +11,7 @@ const LandingPage = () => {
     const particles = ['⚽', '🏀', '🎾', '🏈', '⚾', '🏐', '🏸', '⛳', '🥊'];
     const container = document.querySelector('.landing-container');
     
-    particles.forEach((emoji, index) => {
+    particles.forEach((emoji) => {
       const particle = document.createElement('div');
       particle.className = 'particle';
       particle.textContent = emoji;

@@ -1,58 +1,63 @@
 import express from "express";
 import Feedback from "../models/Feedback.js";
+import auth from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
+import { createFeedbackSchema, idParamSchema } from "../validators/schemas.js";
+import { AppError } from "../utils/AppError.js";
 
 const router = express.Router();
 
-// Get all feedback (sorted by newest first)
-router.get("/", async (req, res) => {
+/* ------------------------ LIST FEEDBACK ------------------------ */
+// Public, but email is withheld — it is not the public's business.
+router.get("/", async (req, res, next) => {
   try {
-    const feedbacks = await Feedback.find().sort({ createdAt: -1 });
+    const feedbacks = await Feedback.find()
+      .select("-email")
+      .sort({ createdAt: -1 })
+      .limit(100);
     res.json(feedbacks);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching feedback", error: error.message });
+    next(error);
   }
 });
 
-// Submit new feedback
-router.post("/", async (req, res) => {
+/* ------------------------ SUBMIT FEEDBACK ------------------------ */
+router.post("/", auth, validate(createFeedbackSchema), async (req, res, next) => {
   try {
-    const { name, email, rating, comment } = req.body;
+    const { rating, comment } = req.body;
 
-    // Validation
-    if (!name || !email || !rating || !comment) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    if (rating < 1 || rating > 5) {
-      return res.status(400).json({ message: "Rating must be between 1 and 5" });
-    }
-
-    const feedback = new Feedback({
-      name,
-      email,
+    // Identity comes from the token, never from the request body, so feedback
+    // cannot be posted under another person's name.
+    const feedback = await Feedback.create({
+      name: req.user.name,
+      email: req.user.email,
+      user: req.user._id,
       rating,
       comment,
     });
 
-    const savedFeedback = await feedback.save();
-    res.status(201).json(savedFeedback);
+    res.status(201).json(feedback);
   } catch (error) {
-    res.status(500).json({ message: "Error submitting feedback", error: error.message });
+    next(error);
   }
 });
 
-// Optional: Delete feedback (admin functionality)
-router.delete("/:id", async (req, res) => {
+/* ------------------------ DELETE FEEDBACK ------------------------ */
+// Authors may delete their own feedback; admins may delete any.
+router.delete("/:id", auth, validate(idParamSchema, "params"), async (req, res, next) => {
   try {
-    const feedback = await Feedback.findByIdAndDelete(req.params.id);
-    
-    if (!feedback) {
-      return res.status(404).json({ message: "Feedback not found" });
+    const feedback = await Feedback.findById(req.params.id);
+    if (!feedback) throw new AppError("Feedback not found", 404);
+
+    const isAuthor = feedback.user && feedback.user.toString() === req.user._id.toString();
+    if (!isAuthor && req.user.role !== "admin") {
+      throw new AppError("You can only delete your own feedback", 403);
     }
 
+    await feedback.deleteOne();
     res.json({ message: "Feedback deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Error deleting feedback", error: error.message });
+    next(error);
   }
 });
 

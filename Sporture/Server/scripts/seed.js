@@ -1,5 +1,6 @@
 // Server/scripts/seed.js
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -7,6 +8,18 @@ import User from "../models/userModel.js";
 import Event from "../models/Event.js";
 
 const MONGO = process.env.MONGO_URI || "mongodb://localhost:27017/sporturedb";
+
+// Shared password for every seeded dev account. Overridable so the value never
+// has to be hardcoded when seeding a shared environment.
+const SEED_PASSWORD = process.env.SEED_PASSWORD || "Password123!";
+
+/** Days from today, at a given hour — keeps seeded events perpetually upcoming. */
+const daysFromNow = (days, hour = 18, minute = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  d.setHours(hour, minute, 0, 0);
+  return d;
+};
 
 /**
  * 1) Users to ensure exist (upsert by email).
@@ -16,7 +29,6 @@ const usersSeed = [
   {
     name: "Radha Raman",
     email: "radha@example.com",
-    password: "123456",
     favSports: ["Badminton", "Football"],
     skillLevel: "Intermediate",
     rating: 4,
@@ -30,7 +42,6 @@ const usersSeed = [
   {
     name: "Ahana Sharma",
     email: "ahana@sporture.com",
-    password: "123456",
     favSports: ["Tennis", "Badminton"],
     skillLevel: "Intermediate",
     rating: 4.5,
@@ -44,7 +55,6 @@ const usersSeed = [
   {
     name: "Srivani Rao",
     email: "srivani@sporture.com",
-    password: "123456",
     favSports: ["Football", "Cricket"],
     skillLevel: "Advanced",
     rating: 4.2,
@@ -58,7 +68,6 @@ const usersSeed = [
   {
     name: "Shri",
     email: "shri@sporture.com",
-    password: "123456",
     favSports: ["Basketball", "Tennis"],
     skillLevel: "Intermediate",
     rating: 4.3,
@@ -72,7 +81,6 @@ const usersSeed = [
   {
     name: "Arjun Patel",
     email: "arjun@sporture.com",
-    password: "123456",
     favSports: ["Football"],
     skillLevel: "Beginner",
     rating: 3.8,
@@ -86,7 +94,6 @@ const usersSeed = [
   {
     name: "Meera Iyer",
     email: "meera@sporture.com",
-    password: "123456",
     favSports: ["Cricket", "Badminton"],
     skillLevel: "Professional",
     rating: 4.9,
@@ -100,7 +107,6 @@ const usersSeed = [
   {
     name: "Rohit Sen",
     email: "rohit@sporture.com",
-    password: "123456",
     favSports: ["Football", "Basketball"],
     skillLevel: "Advanced",
     rating: 4.4,
@@ -114,7 +120,6 @@ const usersSeed = [
   {
     name: "Kavya Nair",
     email: "kavya@sporture.com",
-    password: "123456",
     favSports: ["Tennis"],
     skillLevel: "Intermediate",
     rating: 4.1,
@@ -128,7 +133,6 @@ const usersSeed = [
   {
     name: "Vikram Desai",
     email: "vikram@sporture.com",
-    password: "123456",
     favSports: ["Cricket"],
     skillLevel: "Professional",
     rating: 4.7,
@@ -142,7 +146,6 @@ const usersSeed = [
   {
     name: "Ananya Gupta",
     email: "ananya@sporture.com",
-    password: "123456",
     favSports: ["Badminton", "Football"],
     skillLevel: "Beginner",
     rating: 3.9,
@@ -162,7 +165,7 @@ const eventsByEmail = [
   {
     title: "Blore vs Hyd",
     sport: "Cricket",
-    date: new Date("2025-11-14T10:30:00"),
+    date: daysFromNow(3, 10, 30),
     location: "Chinnaswamy Stadium",
     maxPlayers: 22,
     createdByEmail: "shri@sporture.com",
@@ -171,7 +174,7 @@ const eventsByEmail = [
   {
     title: "Saturday Badminton Doubles",
     sport: "Badminton",
-    date: new Date("2025-11-08T18:30:00"),
+    date: daysFromNow(5, 18, 30),
     location: "City Sports Hall",
     maxPlayers: 8,
     createdByEmail: "ahana@sporture.com",
@@ -180,7 +183,7 @@ const eventsByEmail = [
   {
     title: "Sunday Morning Football",
     sport: "Football",
-    date: new Date("2025-11-09T08:00:00"),
+    date: daysFromNow(6, 8, 0),
     location: "Community Ground",
     maxPlayers: 22,
     createdByEmail: "srivani@sporture.com",
@@ -189,7 +192,7 @@ const eventsByEmail = [
   {
     title: "Weeknight Tennis Practice",
     sport: "Tennis",
-    date: new Date("2025-11-06T19:00:00"),
+    date: daysFromNow(2, 19, 0),
     location: "Elite Sports Club",
     maxPlayers: 4,
     createdByEmail: "shri@sporture.com",
@@ -198,7 +201,7 @@ const eventsByEmail = [
   {
     title: "Neighborhood Basketball Pickup",
     sport: "Basketball",
-    date: new Date("2025-11-07T17:00:00"),
+    date: daysFromNow(4, 17, 0),
     location: "Eastside Court",
     maxPlayers: 10,
     createdByEmail: "shri@sporture.com",
@@ -207,7 +210,7 @@ const eventsByEmail = [
   {
     title: "Friendly Cricket Match",
     sport: "Cricket",
-    date: new Date("2025-11-15T08:00:00"),
+    date: daysFromNow(9, 8, 0),
     location: "Greenfield Grounds",
     maxPlayers: 22,
     createdByEmail: "srivani@sporture.com",
@@ -216,7 +219,7 @@ const eventsByEmail = [
   {
     title: "Evening Badminton Singles",
     sport: "Badminton",
-    date: new Date("2025-11-10T19:30:00"),
+    date: daysFromNow(7, 19, 30),
     location: "North Court",
     maxPlayers: 8,
     createdByEmail: "meera@sporture.com",
@@ -225,7 +228,7 @@ const eventsByEmail = [
   {
     title: "Open Tennis Ladder",
     sport: "Tennis",
-    date: new Date("2025-11-12T15:00:00"),
+    date: daysFromNow(8, 15, 0),
     location: "Sunrise Tennis Club",
     maxPlayers: 16,
     createdByEmail: "ahana@sporture.com",
@@ -234,7 +237,7 @@ const eventsByEmail = [
   {
     title: "Sunday AM Cricket Nets",
     sport: "Cricket",
-    date: new Date("2025-11-16T06:00:00"),
+    date: daysFromNow(11, 6, 0),
     location: "Stadium Practice Nets",
     maxPlayers: 12,
     createdByEmail: "arjun@sporture.com",
@@ -243,7 +246,7 @@ const eventsByEmail = [
   {
     title: "Coed Football 7s",
     sport: "Football",
-    date: new Date("2025-11-20T06:00:00"),
+    date: daysFromNow(14, 6, 0),
     location: "Riverside Pitch",
     maxPlayers: 14,
     createdByEmail: "radha@example.com",
@@ -252,7 +255,7 @@ const eventsByEmail = [
   {
     title: "Weekend Badminton Meetup",
     sport: "Badminton",
-    date: new Date("2025-11-21T12:00:00"),
+    date: daysFromNow(15, 12, 0),
     location: "Community Hall Court 2",
     maxPlayers: 8,
     createdByEmail: "kavya@sporture.com",
@@ -261,7 +264,7 @@ const eventsByEmail = [
   {
     title: "Sunset Basketball 3v3",
     sport: "Basketball",
-    date: new Date("2025-11-22T17:30:00"),
+    date: daysFromNow(16, 17, 30),
     location: "Westend Court",
     maxPlayers: 6,
     createdByEmail: "meera@sporture.com",
@@ -272,11 +275,15 @@ const eventsByEmail = [
 async function upsertUsersAndGetMap() {
   const emailToId = new Map();
 
+  // Hash once and reuse: findOneAndUpdate does NOT trigger the pre("save")
+  // hook on the User model, so hashing has to be explicit here.
+  const hashed = await bcrypt.hash(SEED_PASSWORD, 12);
+
   for (const u of usersSeed) {
     // upsert by email; only set fields on insert so you don't overwrite your manual edits later
     const doc = await User.findOneAndUpdate(
       { email: u.email },
-      { $setOnInsert: u },
+      { $setOnInsert: { ...u, password: hashed } },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
     emailToId.set(u.email, doc._id);

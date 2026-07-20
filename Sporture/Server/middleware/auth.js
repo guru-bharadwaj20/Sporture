@@ -1,42 +1,37 @@
 // server/middleware/auth.js
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
+import { AppError } from "../utils/AppError.js";
 
 const auth = async (req, res, next) => {
   try {
     const header = req.header("Authorization");
-    const token = header ? header.replace("Bearer ", "") : null;
+    const token = header?.startsWith("Bearer ") ? header.slice(7).trim() : null;
 
     if (!token) {
-      return res.status(401).json({ message: "Access denied. No token provided." });
+      throw new AppError("Access denied. No token provided.", 401);
     }
 
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (err) {
-      console.error("❌ Token verification failed:", err.message);
-      return res.status(401).json({ message: "Invalid or expired token" });
-    }
+    // Verification errors (invalid signature, expiry) are mapped to 401 by the
+    // central error handler.
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const userId = decoded.id || decoded._id || decoded.userId;
     if (!userId) {
-      console.error("⚠️ Token payload missing user id:", decoded);
-      return res.status(401).json({ message: "Invalid token payload" });
+      throw new AppError("Invalid token payload", 401);
     }
 
-    const user = await User.findById(userId).select("-password");
+    const user = await User.findById(userId);
     if (!user) {
-      console.error("❌ Authenticated user not found in DB:", userId);
-      return res.status(404).json({ message: "User not found" });
+      // The token is well-formed but its subject no longer exists — that is an
+      // authentication failure, not a missing resource.
+      throw new AppError("Invalid or expired token", 401);
     }
 
     req.user = user;
-    console.log("✅ Authenticated user:", user.name, "(", user._id.toString(), ")");
     next();
   } catch (error) {
-    console.error("Auth middleware error:", error);
-    res.status(500).json({ message: "Server error in auth middleware", error: error.message });
+    next(error);
   }
 };
 

@@ -107,17 +107,6 @@ const EventDiscovery = () => {
     }
   };
 
-  const getSportIcon = (sport) => {
-    const icons = {
-      'Football': '⚽',
-      'Basketball': '🏀',
-      'Tennis': '🎾',
-      'Cricket': '🏏',
-      'Badminton': '🏸',
-      'Volleyball': '🏐',
-    };
-    return icons[sport] || '🏅';
-  };
 
   if (loading) {
     return (

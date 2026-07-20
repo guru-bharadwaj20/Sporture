@@ -30,15 +30,16 @@ Sporture is a full-stack MERN web application built to connect individuals throu
 - **Create Events:** Configure sport type, venue, date/time, title, and participant limit.
 - **Event Details Page:** Well-designed and animated pages showing complete event data.
 - **Popular Venues:** Highlights top event locations from aggregated statistics.
-- **Real-Time Notifications:** Instant alerts when new events are added.
+- **Safe Joining:** Capacity is enforced atomically, so an event can never be overbooked by simultaneous joins.
 
 ### 💬 Feedback & Ratings
 - Users can submit feedback and rate hosts/events to maintain a positive community.
+- Feedback is attributed to the authenticated user and can only be deleted by its author.
 
 ### 🧭 Additional Highlights
 - Fully responsive layout for all devices.
 - Google Fonts + custom animated gradient design.
-- Auto-refreshing event and user stats.
+- Reminders page listing your upcoming joined and hosted events.
 - Smooth routing with React Router.
 
 ---
