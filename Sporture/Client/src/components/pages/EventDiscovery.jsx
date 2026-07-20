@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api, { joinEvent } from "../utils/api";
 import { useGeolocation, formatDistance } from "../utils/useGeolocation";
+import EventMap from "../common/EventMap";
 import "./EventDiscovery.css";
 
 const RADIUS_OPTIONS = [
@@ -20,6 +21,7 @@ const EventDiscovery = () => {
   const [sportsList, setSportsList] = useState([]);
   const [sportFilter, setSportFilter] = useState("All");
   const [radius, setRadius] = useState(10000);
+  const [view, setView] = useState("list"); // list | map
   const [joining, setJoining] = useState({});
   const [userId, setUserId] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -149,6 +151,25 @@ const EventDiscovery = () => {
       </div>
 
       <div className="filter-section">
+        <div className="filter-bar view-toggle">
+          <button
+            type="button"
+            className={`view-toggle-btn${view === "list" ? " is-active" : ""}`}
+            onClick={() => setView("list")}
+            aria-pressed={view === "list"}
+          >
+            ☰ List
+          </button>
+          <button
+            type="button"
+            className={`view-toggle-btn${view === "map" ? " is-active" : ""}`}
+            onClick={() => setView("map")}
+            aria-pressed={view === "map"}
+          >
+            🗺️ Map
+          </button>
+        </div>
+
         <div className="filter-bar">
           <label>Filter by sport:</label>
           <select
@@ -208,7 +229,9 @@ const EventDiscovery = () => {
         </p>
       </div>
 
-      {events.length === 0 ? (
+      {view === "map" ? (
+        <EventMap events={events} centre={coords} radius={coords ? radius : null} />
+      ) : events.length === 0 ? (
         <div className="no-events">
           <span className="no-events-icon">🔍</span>
           <h3>No events found{sportFilter !== "All" ? ` for "${sportFilter}"` : ""}</h3>

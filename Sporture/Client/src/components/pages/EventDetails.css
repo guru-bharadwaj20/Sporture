@@ -539,3 +539,23 @@ body.event-details-active {
     gap: 8px;
   }
 }
+/* The embedded map replaces the placeholder; keep it inside the card. */
+.location-card .event-map {
+  margin: 0 0 14px;
+  border-radius: 14px;
+  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.directions-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #667eea;
+  text-decoration: none;
+}
+
+.directions-link:hover {
+  text-decoration: underline;
+}

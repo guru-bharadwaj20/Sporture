@@ -1,8 +1,9 @@
 // src/components/pages/CreateEvent.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createEvent } from "../utils/api"; // ✅ token-aware axios instance
 import { useGeolocation } from "../utils/useGeolocation";
+import VenuePicker from "../common/VenuePicker";
 import './CreateEvent.css';
 
 const CreateEvent = () => {
@@ -14,10 +15,21 @@ const CreateEvent = () => {
     location: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  // A pin dropped on the map. When set it overrides geocoding the address.
+  const [pin, setPin] = useState(null);
 
   const navigate = useNavigate();
-  const { coords, status: geoStatus, error: geoError, request: requestLocation, clear: clearCoords } =
+  const { coords, status: geoStatus, error: geoError, request: requestLocation } =
     useGeolocation();
+
+  // "Use my current location" seeds the pin, which the user can then drag.
+  useEffect(() => {
+    if (coords) {
+      setPin(coords);
+      setShowMap(true);
+    }
+  }, [coords]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -32,10 +44,10 @@ const CreateEvent = () => {
         sport: formData.sport,
         date: formData.date,
         maxPlayers: formData.maxPlayers,
-        // Sending coordinates when we have them skips server-side geocoding,
-        // which is both faster and more precise than resolving the text.
-        location: coords
-          ? { address: formData.location, lat: coords.lat, lng: coords.lng }
+        // A dropped pin is more precise than geocoding the address, which
+        // resolves to a building or street centroid. Falls back to the text.
+        location: pin
+          ? { address: formData.location, lat: pin.lat, lng: pin.lng }
           : formData.location,
       };
 
@@ -89,19 +101,42 @@ const CreateEvent = () => {
               placeholder="Venue address (e.g. Chinnaswamy Stadium, Bengaluru)"
               required
             />
-            {coords ? (
-              <p className="location-hint pinned">
-                📍 Pinned to your current position
-                <button type="button" onClick={clearCoords}>use the address instead</button>
-              </p>
-            ) : (
-              <p className="location-hint">
-                <button type="button" onClick={requestLocation} disabled={geoStatus === "locating"}>
-                  {geoStatus === "locating" ? "Finding you..." : "📍 Use my current location"}
+            <div className="location-actions">
+              <button
+                type="button"
+                className="location-action"
+                onClick={() => setShowMap((v) => !v)}
+              >
+                {showMap ? "Hide map" : "🗺️ Pick on map"}
+              </button>
+              <button
+                type="button"
+                className="location-action"
+                onClick={requestLocation}
+                disabled={geoStatus === "locating"}
+              >
+                {geoStatus === "locating" ? "Finding you..." : "📍 Use my location"}
+              </button>
+              {pin && (
+                <button
+                  type="button"
+                  className="location-action location-action--clear"
+                  onClick={() => setPin(null)}
+                >
+                  Clear pin
                 </button>
-                {" "}— otherwise we'll look up the address you typed.
-              </p>
+              )}
+            </div>
+
+            {showMap && (
+              <VenuePicker position={pin} sport={formData.sport} onPick={setPin} />
             )}
+
+            <p className={`location-hint${pin ? " pinned" : ""}`}>
+              {pin
+                ? `📍 Pinned at ${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)}`
+                : "No pin set — we'll look up the address you typed."}
+            </p>
             {geoError && <p className="location-error">{geoError}</p>}
           </div>
           <div>

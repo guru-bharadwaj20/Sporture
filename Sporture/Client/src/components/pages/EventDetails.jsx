@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getEventById } from "../utils/api";
+import EventMap from "../common/EventMap";
 import "./EventDetails.css"; // ✅ Import the CSS file
 
 const EventDetails = () => {
@@ -211,10 +212,24 @@ const EventDetails = () => {
                 <span className="section-icon">🗺️</span>
                 Location
               </h3>
-              <div className="map-placeholder">📍</div>
+              {location?.geo?.coordinates ? (
+                <EventMap events={[event]} height={240} />
+              ) : (
+                <div className="map-placeholder">📍</div>
+              )}
               <p className="location-text">
                 {typeof location === "object" ? location.address : location || "Location unavailable"}
               </p>
+              {location?.geo?.coordinates && (
+                <a
+                  className="directions-link"
+                  href={`https://www.openstreetmap.org/directions?to=${location.geo.coordinates[1]},${location.geo.coordinates[0]}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Get directions →
+                </a>
+              )}
             </div>
           </div>
         </div>

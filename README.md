@@ -6,6 +6,21 @@ Sporture is a full-stack MERN application for discovering and organising local s
 central feature is **proximity search**: find games happening near you, sorted by distance, filtered
 by sport and radius — backed by MongoDB geospatial indexing rather than string matching.
 
+![Map view with radius search](docs/screenshots/map-radius-search.png)
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/venue-picker.png" alt="Drop a pin on the exact venue" />
+      <sub><b>Venue picker</b> — drop or drag a pin for precise coordinates</sub>
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/list-with-distance.png" alt="List view with distances" />
+      <sub><b>List view</b> — same query, sorted nearest-first</sub>
+    </td>
+  </tr>
+</table>
+
 ---
 
 ## 🚀 Features
@@ -16,6 +31,14 @@ by sport and radius — backed by MongoDB geospatial indexing rather than string
 - Results sorted nearest-first via MongoDB's `$geoNear` aggregation over a `2dsphere` index.
 - Venue addresses are geocoded server-side (OpenStreetMap Nominatim) when a host doesn't
   supply coordinates directly; results are cached and rate-limited to respect the provider's policy.
+
+### 🗺️ Interactive Maps
+- **List / Map toggle** on discovery — the same query rendered either way, with a radius circle
+  and your position marked.
+- **Venue picker** on event creation: drop or drag a pin for exact coordinates, which beats
+  geocoding a text address (that resolves to a building or street centroid).
+- Sport-aware markers, event popups, and a mini-map with directions on each event page.
+- Leaflet + OpenStreetMap — no API key, no billing, no vendor account needed to run the project.
 
 ### 🧑‍💻 Authentication
 - JWT-based login and registration, passwords hashed with bcrypt (cost 12).
@@ -42,6 +65,7 @@ by sport and radius — backed by MongoDB geospatial indexing rather than string
 | Layer | Technology |
 |-------|------------|
 | **Frontend** | React 19, React Router 7, Vite 7, Axios |
+| **Maps** | Leaflet 1.9, react-leaflet 5, OpenStreetMap tiles |
 | **Backend** | Node.js, Express 5 |
 | **Database** | MongoDB (Mongoose 8), `2dsphere` geospatial index |
 | **Auth** | JWT, bcrypt |
@@ -59,8 +83,12 @@ Sporture/
 ├── Client/                     React SPA
 │   └── src/components/
 │       ├── pages/              Route-level components
+│       ├── common/
+│       │   ├── EventMap.jsx    Read-only map: pins, radius circle, popups
+│       │   └── VenuePicker.jsx Click/drag to set event coordinates
 │       └── utils/
 │           ├── api.js          Axios instance + token interceptor
+│           ├── mapIcons.js     HTML divIcon markers
 │           └── useGeolocation.js
 └── Server/
     ├── app.js                  Express app (no side effects — importable by tests)
@@ -109,6 +137,16 @@ There's a test that fires six simultaneous joins at a two-slot event and asserts
 coordinates: [lng, lat] } }`. MongoDB requires longitude first — the reverse of how coordinates
 are normally spoken and of what the browser's geolocation API returns — so the swap is done once,
 at the validation boundary.
+
+**Map markers are HTML, not images.** Leaflet resolves its default marker PNGs relative to its
+stylesheet, which breaks under Vite's asset hashing and yields invisible markers with no error.
+Building them as `divIcon`s sidesteps the bundler entirely and makes them styleable in CSS —
+which is how each sport gets its own glyph.
+
+**Map movement is not animated.** An in-flight pan or zoom that outlives its container — clicking
+through to an event, or switching back to the list — lands its animation frame on a detached
+element and throws `Cannot read properties of undefined (reading '_leaflet_pos')`. Passing
+`animate: false` removes the race rather than papering over it with an error boundary.
 
 ---
 
