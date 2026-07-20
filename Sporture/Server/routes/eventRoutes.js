@@ -7,9 +7,11 @@ import {
   createEventSchema,
   eventQuerySchema,
   idParamSchema,
+  recommendQuerySchema,
 } from "../validators/schemas.js";
 import { AppError } from "../utils/AppError.js";
 import { geocodeAddress } from "../services/geocoder.js";
+import { rankEvents } from "../services/recommendations.js";
 
 const router = express.Router();
 
@@ -40,6 +42,13 @@ const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // Applied when a search supplies a centre point but no explicit radius.
 const DEFAULT_RADIUS_METRES = 25_000;
+
+// Recommendations search wider than discovery — a strong match slightly
+// further out is still worth surfacing.
+const RECOMMEND_RADIUS_METRES = 50_000;
+
+// Upper bound on events pulled into memory for scoring.
+const CANDIDATE_CAP = 300;
 
 /* -------------------------- CREATE EVENT -------------------------- */
 router.post("/", auth, validate(createEventSchema), async (req, res, next) => {
@@ -195,6 +204,105 @@ router.post("/:id/join", auth, validate(idParamSchema, "params"), async (req, re
     next(err);
   }
 });
+
+/* -------------------------- RECOMMENDED EVENTS -------------------------- */
+/**
+ * Personalised ranking. Must stay above the "/:id" route below, or Express
+ * matches "recommended" as an event id.
+ *
+ * Candidates are narrowed in MongoDB (upcoming, joinable, not already the
+ * user's) and then scored in application code. Scoring in JS rather than an
+ * aggregation keeps the weighting readable and unit-testable; the trade-off is
+ * that it needs the candidate set in memory, which is why it is capped. At a
+ * scale where that cap bites, the scoring would move into the pipeline.
+ */
+router.get(
+  "/recommended",
+  auth,
+  validate(recommendQuerySchema, "query"),
+  async (req, res, next) => {
+    try {
+      const { lat, lng, limit = 10 } = req.query;
+      const userId = req.user._id;
+      const now = new Date();
+
+      const baseFilter = {
+        date: { $gt: now },
+        createdBy: { $ne: userId },      // your own events aren't suggestions
+        currentPlayers: { $ne: userId }, // nor ones you're already in
+        $expr: { $lt: [{ $size: "$currentPlayers" }, "$maxPlayers"] }, // not full
+      };
+
+      // People the user has already played alongside, used by the social
+      // signal. Their own id is removed so it never counts as a match.
+      const history = await Event.find({ currentPlayers: userId })
+        .select("currentPlayers")
+        .limit(100)
+        .lean();
+
+      const pastTeammateIds = new Set(
+        history.flatMap((e) => e.currentPlayers.map(String))
+      );
+      pastTeammateIds.delete(String(userId));
+
+      let candidates;
+
+      if (lat !== undefined) {
+        // $geoNear attaches distanceMetres, which the proximity signal needs.
+        candidates = await Event.aggregate([
+          {
+            $geoNear: {
+              near: { type: "Point", coordinates: [lng, lat] },
+              distanceField: "distanceMetres",
+              maxDistance: RECOMMEND_RADIUS_METRES,
+              query: baseFilter,
+              spherical: true,
+            },
+          },
+          { $limit: CANDIDATE_CAP },
+          {
+            $lookup: {
+              from: "users",
+              localField: "createdBy",
+              foreignField: "_id",
+              as: "createdBy",
+              pipeline: [{ $project: { name: 1, skillLevel: 1 } }],
+            },
+          },
+          { $unwind: "$createdBy" },
+          {
+            $lookup: {
+              from: "users",
+              localField: "currentPlayers",
+              foreignField: "_id",
+              as: "currentPlayers",
+              pipeline: [{ $project: { name: 1 } }],
+            },
+          },
+        ]);
+      } else {
+        // Without a centre point, proximity scores neutral for every event and
+        // ranking falls back to the remaining signals.
+        candidates = await Event.find(baseFilter)
+          .populate("createdBy", "name skillLevel")
+          .populate("currentPlayers", "name")
+          .sort({ date: 1 })
+          .limit(CANDIDATE_CAP)
+          .lean();
+      }
+
+      const ranked = rankEvents(candidates, req.user, { pastTeammateIds, now });
+
+      res.json({
+        count: ranked.length,
+        personalised: Boolean(req.user.favSports?.length) || lat !== undefined,
+        events: ranked.slice(0, limit),
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 /* --------------------------- GET SINGLE EVENT --------------------------- */
 router.get("/:id", validate(idParamSchema, "params"), async (req, res, next) => {

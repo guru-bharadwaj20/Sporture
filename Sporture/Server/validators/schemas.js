@@ -99,6 +99,18 @@ export const eventQuerySchema = z
     path: ["radius"],
   });
 
+/** Recommendations take an optional centre so distance can be scored. */
+export const recommendQuerySchema = z
+  .object({
+    lat: latitude.optional(),
+    lng: longitude.optional(),
+    limit: z.coerce.number().int().positive().max(50).optional(),
+  })
+  .refine((q) => (q.lat === undefined) === (q.lng === undefined), {
+    message: "lat and lng must be provided together",
+    path: ["lat"],
+  });
+
 /* --------------------------- FEEDBACK --------------------------- */
 // `name` and `email` are intentionally absent: they are taken from the
 // authenticated user so feedback cannot be submitted under someone else's name.

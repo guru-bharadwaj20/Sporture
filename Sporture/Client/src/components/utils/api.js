@@ -62,6 +62,12 @@ export const getEvents = () => api.get("/events"); // For discovery page
 export const getEventById = (id) => api.get(`/events/${id}`); // For EventDetails page
 export const createEvent = (eventData) => api.post("/events", eventData);
 export const getJoinedEvents = () => api.get("/events/joined");
+
+// `coords` is optional — without it the ranking simply scores distance neutral.
+export const getRecommendedEvents = ({ coords, limit = 6 } = {}) =>
+  api.get("/events/recommended", {
+    params: { limit, ...(coords ? { lat: coords.lat, lng: coords.lng } : {}) },
+  });
 export const joinEvent = (id) => api.post(`/events/${id}/join`);
 
 export default api;

@@ -1,4 +1,5 @@
 import L from "leaflet";
+import { emojiForSport } from "./sports";
 
 /**
  * Markers are built with divIcon (HTML) rather than Leaflet's default image
@@ -6,22 +7,6 @@ import L from "leaflet";
  * which breaks under Vite's asset hashing and silently yields invisible
  * markers. HTML icons sidestep that entirely and are easier to style.
  */
-
-const SPORT_EMOJI = {
-  football: "⚽",
-  cricket: "🏏",
-  tennis: "🎾",
-  badminton: "🏸",
-  basketball: "🏀",
-  volleyball: "🏐",
-  hockey: "🏑",
-  swimming: "🏊",
-  running: "🏃",
-  cycling: "🚴",
-};
-
-export const emojiForSport = (sport = "") =>
-  SPORT_EMOJI[sport.trim().toLowerCase()] || "🏅";
 
 export const eventIcon = (sport, { highlighted = false } = {}) =>
   L.divIcon({

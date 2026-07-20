@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from "react";
 import "./dashboard.css";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser, getAllEvents } from "../utils/api";
+import RecommendedEvents from "../common/RecommendedEvents";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -179,6 +180,8 @@ const Dashboard = () => {
           <h1 className="hero-title">Welcome back, <span className="highlight">{firstName}!</span></h1>
           <p className="hero-subtitle">Explore sports events, track your stats, and stay updated — all in one place.</p>
         </section>
+        <RecommendedEvents limit={6} />
+
         <div className="stats-grid">
           <div className="stat-card stat-blue">
             <div className="stat-icon">🏆</div>

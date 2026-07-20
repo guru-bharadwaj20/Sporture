@@ -32,6 +32,16 @@ by sport and radius — backed by MongoDB geospatial indexing rather than string
 - Venue addresses are geocoded server-side (OpenStreetMap Nominatim) when a host doesn't
   supply coordinates directly; results are cached and rate-limited to respect the provider's policy.
 
+### ✨ Personalised Recommendations
+- Events ranked per user by five weighted signals: **sport affinity, proximity, skill match,
+  shared history with other players, and urgency** (how soon it starts, how full it is).
+- Every suggestion states *why* it was suggested — an unexplained ranking is indistinguishable
+  from an arbitrary one.
+- Already-joined, self-hosted, full and past events are excluded.
+- Works without a location; distance simply scores neutral, and the other signals decide.
+
+![Personalised recommendations](docs/screenshots/recommendations.png)
+
 ### 🗺️ Interactive Maps
 - **List / Map toggle** on discovery — the same query rendered either way, with a radius circle
   and your position marked.
@@ -133,6 +143,34 @@ filter of a single `findOneAndUpdate`:
 A read-then-write would let two concurrent requests both observe a free slot and both write.
 There's a test that fires six simultaneous joins at a two-slot event and asserts exactly two succeed.
 
+**Recommendation scoring is a pure module.** [`services/recommendations.js`](Sporture/Server/services/recommendations.js)
+touches no database and reads no clock — `now` is passed in. Every signal returns a value in
+`[0, 1]` and the final score is a weighted mean, so the result stays in `[0, 1]` and remains
+comparable if the weights are retuned:
+
+```js
+score = (3.0·sportAffinity + 2.5·proximity + 2.0·skillMatch
+       + 1.5·socialSignal + 1.0·urgency) / 10.0
+```
+
+Purity is what makes the weighting testable — ranking rules are the part most likely to be
+tuned, and tuning without tests is how relevance quietly regresses. Missing inputs score a
+neutral `0.5` rather than `0`, so a brand-new account with no stated preferences doesn't rank
+every event equally at the bottom.
+
+Proximity decays exponentially with a 5 km half-life rather than linearly, because the
+difference between 1 km and 3 km matters far more to a player than 20 km vs 22 km. Skill is
+ordinal, not nominal: Beginner→Intermediate is a much smaller penalty than Beginner→Professional.
+
+Ranking breaks ties on date and then on id. The id tiebreak looks redundant but is what makes
+the ordering *total* — without it, two events with the same score and date fall back on input
+order, so the same request could return a different sequence run to run and paging would skip
+or repeat items.
+
+Candidates are narrowed in MongoDB and scored in application code. That trades scalability for
+readability: it needs the candidate set in memory, hence the 300-event cap. At a scale where
+that cap binds, the scoring would move into the aggregation pipeline.
+
 **Locations are GeoJSON, not strings.** `location` stores `{ address, geo: { type: "Point",
 coordinates: [lng, lat] } }`. MongoDB requires longitude first — the reverse of how coordinates
 are normally spoken and of what the browser's geolocation API returns — so the swap is done once,
@@ -161,6 +199,7 @@ element and throws `Cannot read properties of undefined (reading '_leaflet_pos')
 | `POST` | `/api/events` | ✅ | Create an event |
 | `GET`  | `/api/events/:id` | — | Event detail |
 | `GET`  | `/api/events/joined` | ✅ | Events you host or joined |
+| `GET`  | `/api/events/recommended` | ✅ | Personalised ranking |
 | `POST` | `/api/events/:id/join` | ✅ | Join an event |
 | `GET`  | `/api/users/:id` | ✅ | Public profile |
 | `PUT`  | `/api/users/:id` | ✅ | Update own profile |
@@ -185,6 +224,28 @@ GET /api/events?lat=12.9352&lng=77.6245&radius=5000&sport=badminton
 
 When `lat`/`lng` are present each event gains a `distanceMetres` field and results are ordered
 nearest-first. Without them the response is a plain chronological listing.
+
+### Recommendations
+
+```
+GET /api/events/recommended?lat=12.9352&lng=77.6245&limit=6
+```
+
+Returns each event with a `score` in `[0, 1]`, a `breakdown` of the five signals, and
+human-readable `reasons`:
+
+```json
+{
+  "score": 0.742,
+  "title": "Weekend Badminton Meetup",
+  "breakdown": { "sport": 1, "proximity": 0.25, "skill": 1, "social": 0.5, "urgency": 0.61 },
+  "reasons": [
+    "Badminton is one of your favourite sports",
+    "Host plays at your level (Intermediate)",
+    "You've played with 1 person here before"
+  ]
+}
+```
 
 ---
 
@@ -254,7 +315,7 @@ Addresses that can't be geocoded are reported and left untouched, rather than gu
 
 ```bash
 cd Sporture/Server
-npm test                # 97 tests
+npm test                # 156 tests
 npm run test:coverage
 ```
 
