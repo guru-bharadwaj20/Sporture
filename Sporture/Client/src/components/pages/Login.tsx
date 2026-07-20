@@ -2,7 +2,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser, getCurrentUser } from "../utils/api";
-import { setStoredUser } from "../utils/storage";
+import { setStoredUser, setToken } from "../utils/storage";
 import { apiErrorMessage } from "../utils/errors";
 import "./Auth.css";
 
@@ -36,7 +36,7 @@ const Login = () => {
       // Expecting { success, token, user } from backend
       if (response.data.success) {
         // Save token
-        localStorage.setItem("token", response.data.token);
+        setToken(response.data.token);
 
         // Fetch authoritative user from server using token
         try {

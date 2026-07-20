@@ -4,10 +4,12 @@ import { useNavigate } from "react-router-dom";
 import type { SkillLevel } from "@shared/api";
 import { registerUser } from "../utils/api";
 import { apiErrorMessage } from "../utils/errors";
+import { useToast } from "../common/toastContext";
 import "./Auth.css";
 
 const Register = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [formData, setFormData] = useState<{
     name: string;
     email: string;
@@ -79,7 +81,7 @@ const Register = () => {
         const submitBtn = document.querySelector('.btn-submit');
         if (submitBtn) submitBtn.classList.add('success-state');
 
-        alert("🎉 Registration successful! Please login to continue.");
+        toast.success("Account created. Please log in to continue.");
         
         setTimeout(() => {
           navigate("/login");

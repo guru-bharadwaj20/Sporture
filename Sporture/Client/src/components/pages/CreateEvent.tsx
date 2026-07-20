@@ -1,6 +1,7 @@
 // src/components/pages/CreateEvent.jsx
 import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { apiErrorMessage } from "../utils/errors";
+import { useToast } from "../common/toastContext";
 import type { Coords } from "@shared/api";
 import { useNavigate } from 'react-router-dom';
 import { createEvent } from "../utils/api"; // ✅ token-aware axios instance
@@ -22,6 +23,7 @@ const CreateEvent = () => {
   const [pin, setPin] = useState<Coords | null>(null);
 
   const navigate = useNavigate();
+  const toast = useToast();
   const { coords, status: geoStatus, error: geoError, request: requestLocation } =
     useGeolocation();
 
@@ -59,7 +61,7 @@ const CreateEvent = () => {
       console.error('Event creation error:', apiErrorMessage(err));
             // Validation failures carry a details array; surface it rather than the
       // generic message, so the user knows which field to fix.
-      alert(`❌ ${apiErrorMessage(err, 'Event creation failed')}`);
+      toast.error(apiErrorMessage(err, 'Event creation failed'));
     } finally {
       setSubmitting(false);
     }

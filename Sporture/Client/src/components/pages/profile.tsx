@@ -4,9 +4,11 @@ import type { EventDTO, SkillLevel, UserDTO } from "@shared/api";
 import { getCurrentUser, updateUserById, getJoinedEvents, uploadUserPhoto } from "../utils/api";
 import { setStoredUser } from "../utils/storage";
 import { apiErrorMessage } from "../utils/errors";
+import { useToast } from "../common/toastContext";
 import "./Profile.css";
 
 const Profile = () => {
+  const toast = useToast();
   const [user, setUser] = useState<UserDTO | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [activeTab, setActiveTab] = useState("upcoming");
@@ -85,11 +87,11 @@ const Profile = () => {
     if (data.user) {
       setUser(data.user);
       setStoredUser(data.user);
-      alert("✅ Profile photo updated!");
+      toast.success("Profile photo updated.");
     }
   } catch (err) {
     console.error("❌ Upload failed:", err);
-    alert(apiErrorMessage(err, "Failed to upload image."));
+    toast.error(apiErrorMessage(err, "Failed to upload image."));
   }
 };
 
@@ -108,10 +110,10 @@ const Profile = () => {
       });
       setUser(res.data);
       setStoredUser(res.data);
-      alert("✅ Profile updated successfully!");
+      toast.success("Profile updated.");
     } catch (err) {
       console.error("Error updating profile:", err);
-      alert(apiErrorMessage(err, "❌ Failed to update profile."));
+      toast.error(apiErrorMessage(err, "Failed to update profile."));
     } finally {
       setEditMode(false);
     }

@@ -73,6 +73,10 @@ const Feedback = () => {
                   key={star}
                   className={form.rating >= star ? "star active" : "star"}
                   onClick={() => handleRating(star)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Rate ${star} out of 5`}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleRating(star); } }}
                 >
                   ★
                 </span>

@@ -10,12 +10,18 @@ import EventDiscovery from "./components/pages/EventDiscovery";
 import EventDetails from "./components/pages/EventDetails";
 import CreateEvent from "./components/pages/CreateEvent";
 import Reminders from "./components/pages/Reminders";
-import ProtectedRoute from "./components/utils/ProtectedRoute"; // ✅ Import
+import ProtectedRoute from "./components/utils/ProtectedRoute";
+import ErrorBoundary from "./components/common/ErrorBoundary";
+import { ToastProvider } from "./components/common/ToastProvider";
 
 function App() {
   return (
-    <Router>
-      <Routes>
+    // ErrorBoundary is outermost so a crash anywhere below still renders a
+    // recoverable page rather than a blank document.
+    <ErrorBoundary>
+      <ToastProvider>
+        <Router>
+          <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
@@ -66,8 +72,10 @@ function App() {
             </ProtectedRoute>
           } 
         />
-      </Routes>
-    </Router>
+          </Routes>
+        </Router>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }
 

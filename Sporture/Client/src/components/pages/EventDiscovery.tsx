@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
 import type { EventDTO, EventSearchParams } from "@shared/api";
 import { Link, useNavigate } from "react-router-dom";
 import { getEvents, joinEvent } from "../utils/api";
-import { getStoredUser } from "../utils/storage";
+import { clearSession, getStoredUser, getToken } from "../utils/storage";
 import { apiErrorMessage, isUnauthorised } from "../utils/errors";
+import { useToast } from "../common/toastContext";
 import { useGeolocation, formatDistance } from "../utils/useGeolocation";
 import EventMap from "../common/EventMap";
 import "./EventDiscovery.css";
@@ -19,6 +20,7 @@ const RADIUS_OPTIONS = [
 
 const EventDiscovery = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [events, setEvents] = useState<EventDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [sportsList, setSportsList] = useState<string[]>([]);
@@ -34,16 +36,9 @@ const EventDiscovery = () => {
 
   // ✅ Check authentication on mount
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const user = getStoredUser();
-    
-    console.log('🔍 Auth Check:', { 
-      hasToken: !!token, 
-      hasUser: !!user, 
-      userId: user?._id,
-      isAuth: !!(token && user && user._id)
-    });
-    
+
     if (token && user && user._id) {
       setIsAuthenticated(true);
       setUserId(user._id);
@@ -95,19 +90,13 @@ const EventDiscovery = () => {
     fetchEvents();
   }, [sportFilter, coords, radius]);
 
-  // ✅ Handle Join - Check Authentication First
   const handleJoin = async (eventId: string) => {
-    // Check token first, before any API call
-    const token = localStorage.getItem('token');
-    
-    console.log('🎯 Join clicked:', { 
-      eventId, 
-      hasToken: !!token, 
-      isAuth: isAuthenticated 
-    });
-    
+    // Checked before the request so an unauthenticated click is a prompt to
+    // log in rather than a 401 round-trip.
+    const token = getToken();
+
     if (!token || !isAuthenticated) {
-      alert("⚠️ Please login to join events!");
+      toast.info("Please log in to join events.");
       navigate("/login");
       return;
     }
@@ -115,22 +104,21 @@ const EventDiscovery = () => {
     setJoining((prev) => ({ ...prev, [eventId]: true }));
     try {
       const res = await joinEvent(eventId);
-      alert(res.data.message);
+      toast.success(res.data.message);
       setEvents((prev) =>
         prev.map((e) => (e._id === eventId ? res.data.event : e))
       );
     } catch (err) {
       // If unauthorized, clear storage and redirect
       if (isUnauthorised(err)) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        alert("⚠️ Session expired. Please login again!");
+        clearSession();
+        toast.error("Your session expired. Please log in again.");
         navigate("/login");
         return;
       }
       
       const msg = apiErrorMessage(err, "Failed to join event.");
-      alert("⚠️ " + msg);
+      toast.error(msg);
     } finally {
       setJoining((prev) => ({ ...prev, [eventId]: false }));
     }

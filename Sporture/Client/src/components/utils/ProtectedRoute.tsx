@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { Navigate } from "react-router-dom";
+import { getToken } from "./storage";
 
 interface ProtectedRouteProps {
   children: ReactElement;
@@ -10,7 +11,7 @@ interface ProtectedRouteProps {
  * boundary — the token is still verified server-side on every request.
  */
 const ProtectedRoute = ({ children }: ProtectedRouteProps): ReactElement => {
-  const token = localStorage.getItem("token");
+  const token = getToken();
   return token ? children : <Navigate to="/login" replace />;
 };
 

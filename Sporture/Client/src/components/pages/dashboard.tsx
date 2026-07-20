@@ -4,7 +4,7 @@ import type { EventDTO, UserDTO } from "@shared/api";
 import "./dashboard.css";
 import { useNavigate } from "react-router-dom";
 import { getCurrentUser, getAllEvents } from "../utils/api";
-import { getStoredUser, setStoredUser } from "../utils/storage";
+import { getStoredUser, setStoredUser, clearSession } from "../utils/storage";
 import RecommendedEvents from "../common/RecommendedEvents";
 
 const Dashboard = () => {
@@ -56,8 +56,7 @@ const Dashboard = () => {
 
       } catch (err) {
         console.error("Failed to load dashboard data:", err);
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        clearSession();
         navigate("/login");
       } finally {
         setLoading(false);
@@ -93,8 +92,7 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to log out?")) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      clearSession();
       navigate("/");
     }
   };
@@ -131,7 +129,7 @@ const Dashboard = () => {
           </div>
           <div className="navbar-right">
             <div className="notification-section">
-              <button className="notification-btn" onClick={() => setShowNotifDropdown(!showNotifDropdown)}>
+              <button className="notification-btn" onClick={() => setShowNotifDropdown(!showNotifDropdown)} aria-label={`Notifications${notifications.length ? ` (${notifications.length} new)` : ""}`} aria-expanded={showNotifDropdown} aria-haspopup="menu">
                 <span className="notif-icon">🔔</span>
                 {notifications.length > 0 && <span className="notif-badge">{notifications.length}</span>}
               </button>
@@ -144,7 +142,7 @@ const Dashboard = () => {
                   <div className="notification-list">
                     {notifications.length > 0 ? (
                       notifications.map(notif => (
-                        <div key={notif.id} className="notification-item" onClick={() => { navigate(`/events/${notif.event._id}`); setShowNotifDropdown(false); setNotifications(prev => prev.filter(n => n.id !== notif.id)); }}>
+                        <div key={notif.id} className="notification-item" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => { navigate(`/events/${notif.event._id}`); setShowNotifDropdown(false); setNotifications(prev => prev.filter(n => n.id !== notif.id)); }}>
                           <p className="notification-message">{notif.message}</p>
                         </div>
                       ))
@@ -154,7 +152,7 @@ const Dashboard = () => {
               )}
             </div>
             <div className="profile-section">
-              <button className="profile-btn" onClick={() => setShowDropdown(!showDropdown)}>
+              <button className="profile-btn" onClick={() => setShowDropdown(!showDropdown)} aria-label="Account menu" aria-expanded={showDropdown} aria-haspopup="menu">
                 <div className="profile-avatar">{initials}</div>
                 <div className="profile-name">{user.name}</div>
               </button>
@@ -234,7 +232,7 @@ const Dashboard = () => {
               {events.length > 3 && (<button className="view-all-btn" onClick={() => setShowAllEvents(!showAllEvents)}>{showAllEvents ? 'View Less' : 'View All'}</button>)}
             </div>
             <div className="events-list">
-              {eventsToShow.length > 0 ? (eventsToShow.map((event, index) => (<div key={event._id} className={`event-card ${eventColors[index % eventColors.length]}`} onClick={() => navigate(`/events/${event._id}`)}><div className="event-main"><div className="event-sport">{event.title}</div><div className="event-spots">{event.currentPlayers.length}/{event.maxPlayers} Spots</div></div><div className="event-venue">{event.location?.address}</div><div className="event-time">{new Date(event.date).toLocaleString('en-US', { weekday: 'long', hour: 'numeric', minute: 'numeric', hour12: true })}</div></div>))) : (<p style={{textAlign: 'center', color: '#64748b'}}>No upcoming events found.</p>)}
+              {eventsToShow.length > 0 ? (eventsToShow.map((event, index) => (<div key={event._id} className={`event-card ${eventColors[index % eventColors.length]}`} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => navigate(`/events/${event._id}`)}><div className="event-main"><div className="event-sport">{event.title}</div><div className="event-spots">{event.currentPlayers.length}/{event.maxPlayers} Spots</div></div><div className="event-venue">{event.location?.address}</div><div className="event-time">{new Date(event.date).toLocaleString('en-US', { weekday: 'long', hour: 'numeric', minute: 'numeric', hour12: true })}</div></div>))) : (<p style={{textAlign: 'center', color: '#64748b'}}>No upcoming events found.</p>)}
             </div>
           </div>
           <div className="activity-right">
