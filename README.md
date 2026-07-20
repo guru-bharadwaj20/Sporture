@@ -74,6 +74,7 @@ by sport and radius — backed by MongoDB geospatial indexing rather than string
 
 | Layer | Technology |
 |-------|------------|
+| **Language** | TypeScript (strict) on both sides |
 | **Frontend** | React 19, React Router 7, Vite 7, Axios |
 | **Maps** | Leaflet 1.9, react-leaflet 5, OpenStreetMap tiles |
 | **Backend** | Node.js, Express 5 |
@@ -90,38 +91,55 @@ by sport and radius — backed by MongoDB geospatial indexing rather than string
 
 ```
 Sporture/
+├── shared/
+│   └── api.ts                  Wire-format API contract, imported by both sides
 ├── Client/                     React SPA
 │   └── src/components/
 │       ├── pages/              Route-level components
 │       ├── common/
-│       │   ├── EventMap.jsx    Read-only map: pins, radius circle, popups
-│       │   └── VenuePicker.jsx Click/drag to set event coordinates
+│       │   ├── EventMap.tsx    Read-only map: pins, radius circle, popups
+│       │   ├── VenuePicker.tsx Click/drag to set event coordinates
+│       │   └── RecommendedEvents.tsx
 │       └── utils/
-│           ├── api.js          Axios instance + token interceptor
-│           ├── mapIcons.js     HTML divIcon markers
-│           └── useGeolocation.js
+│           ├── api.ts          Axios instance + token interceptor
+│           ├── errors.ts       Narrows unknown catch values to a message
+│           ├── storage.ts      Typed, guarded session storage
+│           ├── mapIcons.ts     HTML divIcon markers
+│           └── useGeolocation.ts
 └── Server/
-    ├── app.js                  Express app (no side effects — importable by tests)
-    ├── server.js               Process entry: connect DB, listen
+    ├── app.ts                  Express app (no side effects — importable by tests)
+    ├── server.ts               Process entry: connect DB, listen
     ├── config/
-    │   ├── env.js              Validates required env vars at boot
-    │   └── db.js
+    │   ├── env.ts              Validates required env vars at boot
+    │   └── db.ts
     ├── middleware/
-    │   ├── auth.js             JWT verification
-    │   ├── validate.js         Zod validation + field allowlisting
-    │   ├── rateLimit.js
-    │   └── errorHandler.js     Centralized error translation
-    ├── models/                 Mongoose schemas
+    │   ├── auth.ts             JWT verification
+    │   ├── validate.ts         Zod validation + field allowlisting
+    │   ├── rateLimit.ts
+    │   └── errorHandler.ts     Centralized error translation
+    ├── models/                 Mongoose schemas + their interfaces
     ├── routes/                 Route handlers
-    ├── services/geocoder.js    Address → coordinates
-    ├── validators/schemas.js   Zod schemas (single source of truth for input shape)
-    ├── scripts/                seed.js, migrate-locations.js
+    ├── services/
+    │   ├── geocoder.ts         Address → coordinates
+    │   └── recommendations.ts  Pure scoring module
+    ├── validators/schemas.ts   Zod schemas (single source of truth for input shape)
+    ├── types/express.d.ts      Augments Request with the authenticated user
+    ├── scripts/                seed.ts, migrate-locations.ts
     └── tests/                  Vitest + Supertest suites
 ```
 
 ### Notable design decisions
 
-**`app.js` is separate from `server.js`.** Building the app has no side effects — no DB
+**One API contract, two consumers.** [`shared/api.ts`](Sporture/shared/api.ts) describes the JSON
+*on the wire*, which is deliberately not the server's Mongoose models: dates arrive as ISO
+strings, ObjectIds as strings, populated refs as nested objects. A client typed against the
+Mongoose model would believe `event.date` is a `Date` and break on `.getTime()`. The file is
+type-only, so importing it across the package boundary costs nothing at build time.
+
+Request *input* types come from a different place again — `z.infer` on the Zod schemas — so the
+validated shape and its static type cannot drift apart.
+
+**`app.ts` is separate from `server.ts`.** Building the app has no side effects — no DB
 connection, no `listen`. Tests import it directly and drive it with Supertest, so the suite needs
 no running server and no port.
 
@@ -143,7 +161,7 @@ filter of a single `findOneAndUpdate`:
 A read-then-write would let two concurrent requests both observe a free slot and both write.
 There's a test that fires six simultaneous joins at a two-slot event and asserts exactly two succeed.
 
-**Recommendation scoring is a pure module.** [`services/recommendations.js`](Sporture/Server/services/recommendations.js)
+**Recommendation scoring is a pure module.** [`services/recommendations.ts`](Sporture/Server/services/recommendations.ts)
 touches no database and reads no clock — `now` is passed in. Every signal returns a value in
 `[0, 1]` and the final score is a weighted mean, so the result stays in `[0, 1]` and remains
 comparable if the weights are retuned:
@@ -175,6 +193,19 @@ that cap binds, the scoring would move into the aggregation pipeline.
 coordinates: [lng, lat] } }`. MongoDB requires longitude first — the reverse of how coordinates
 are normally spoken and of what the browser's geolocation API returns — so the swap is done once,
 at the validation boundary.
+
+**Strict TypeScript, including `noUncheckedIndexedAccess`.** The migration paid for itself
+immediately — the compiler found a read of `response.data.message` on a register response that
+never carries one, a dead `f._id ?? f.id` branch in the migration script, and every
+`JSON.parse(localStorage.getItem(...))` site, which returns `null` for a missing key and then
+crashes at the first property access. Those are now behind
+[`storage.ts`](Sporture/Client/src/components/utils/storage.ts), which validates the shape before
+handing it back.
+
+`catch` binds `unknown`, so error handling goes through
+[`errors.ts`](Sporture/Client/src/components/utils/errors.ts) rather than each component casting
+its way to `err.response.data.message`. It also surfaces validation `details` — the per-field
+messages — in preference to the generic "Validation failed".
 
 **Map markers are HTML, not images.** Leaflet resolves its default marker PNGs relative to its
 stylesheet, which breaks under Vite's asset hashing and yields invisible markers with no error.
@@ -265,7 +296,7 @@ cd Sporture/Server
 npm install
 cp .env.example .env      # then fill it in (see below)
 npm run seed              # optional: 10 users + 12 events around Bengaluru
-npm run dev               # http://localhost:5000
+npm run dev               # tsx watch, http://localhost:5000
 
 # --- Client (new terminal) ---
 cd Sporture/Client
@@ -315,6 +346,7 @@ Addresses that can't be geocoded are reported and left untouched, rather than gu
 
 ```bash
 cd Sporture/Server
+npm run typecheck       # tsc --noEmit over source, scripts and tests
 npm test                # 156 tests
 npm run test:coverage
 ```
@@ -332,8 +364,9 @@ safe to run in CI. Coverage is weighted toward security properties rather than h
 
 ```bash
 cd Sporture/Client
+npm run typecheck
 npm run lint
-npm run build
+npm run build           # typechecks, then bundles
 ```
 
 CI runs all of the above on every push and pull request.

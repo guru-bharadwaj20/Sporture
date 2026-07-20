@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   server:
-    name: Server (test)
+    name: Server (typecheck + test)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -30,6 +30,12 @@ jobs:
 
       - run: npm ci
 
+      # Covers source, scripts and tests — tsconfig.build.json narrows to
+      # source only for the emit step.
+      - run: npm run typecheck
+
+      - run: npm run build
+
       # mongodb-memory-server downloads a mongod binary on first use; caching it
       # keeps subsequent runs from re-fetching ~70MB.
       - name: Cache mongodb-memory-server binary
@@ -41,7 +47,7 @@ jobs:
       - run: npm test
 
   client:
-    name: Client (lint + build)
+    name: Client (typecheck + lint + build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -57,5 +63,6 @@ jobs:
           cache-dependency-path: Sporture/Client/package-lock.json
 
       - run: npm ci
+      - run: npm run typecheck
       - run: npm run lint
       - run: npm run build

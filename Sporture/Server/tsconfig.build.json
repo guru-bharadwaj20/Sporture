@@ -1,0 +1,13 @@
+{
+  // Production build. The base tsconfig covers tests too so `npm run typecheck`
+  // checks them; this one keeps them (and vitest's config) out of dist/.
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "tests",
+    "vitest.config.ts",
+    "scripts"
+  ]
+}
