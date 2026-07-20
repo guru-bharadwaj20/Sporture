@@ -82,7 +82,7 @@ by sport and radius — backed by MongoDB geospatial indexing rather than string
 | **Auth** | JWT, bcrypt |
 | **Validation** | Zod |
 | **Security** | Helmet, CORS allowlist, express-rate-limit |
-| **Testing** | Vitest, Supertest, mongodb-memory-server |
+| **Testing** | Vitest, Supertest, mongodb-memory-server, React Testing Library |
 | **CI** | GitHub Actions |
 
 ---
@@ -99,11 +99,14 @@ Sporture/
 │       ├── common/
 │       │   ├── EventMap.tsx    Read-only map: pins, radius circle, popups
 │       │   ├── VenuePicker.tsx Click/drag to set event coordinates
-│       │   └── RecommendedEvents.tsx
+│       │   ├── RecommendedEvents.tsx
+│       │   ├── ErrorBoundary.tsx  Fallback UI instead of a blank page
+│       │   └── ToastProvider.tsx  Non-blocking notifications
 │       └── utils/
 │           ├── api.ts          Axios instance + token interceptor
 │           ├── errors.ts       Narrows unknown catch values to a message
 │           ├── storage.ts      Typed, guarded session storage
+│           ├── sports.ts       Sport → glyph lookup
 │           ├── mapIcons.ts     HTML divIcon markers
 │           └── useGeolocation.ts
 └── Server/
@@ -366,7 +369,19 @@ safe to run in CI. Coverage is weighted toward security properties rather than h
 cd Sporture/Client
 npm run typecheck
 npm run lint
+npm test                # 80 tests (Vitest + React Testing Library)
 npm run build           # typechecks, then bundles
 ```
+
+Client tests run in jsdom and mock the API module, so they need neither a
+server nor a database. They cover the parts most likely to break quietly:
+
+- `storage.ts` returns `null` for malformed or absent session data instead of throwing
+- `errors.ts` prefers per-field validation `details` over the generic message
+- `useGeolocation` never prompts on mount, and maps each failure code to readable text
+- the error boundary renders a fallback rather than a blank page, and recovers on retry
+- toasts stack, auto-expire, and announce politely without stealing focus
+- recommendation cards show a percentage rather than a raw score, and cap reasons at three
+- the API client attaches the token per request, and never sends a half-populated coordinate pair
 
 CI runs all of the above on every push and pull request.

@@ -16,7 +16,13 @@ export const apiErrorMessage = (err: unknown, fallback = "Something went wrong")
     if (data?.details?.length) return data.details.join("\n");
     if (data?.message) return data.message;
     if (err.code === "ERR_NETWORK") return "Can't reach the server. Is it running?";
+
+    // The server responded but said nothing useful. Axios's own message here
+    // is "Request failed with status code 500", which tells the user less than
+    // the caller's context-specific fallback ("Could not load events").
+    return fallback;
   }
+
   if (err instanceof Error && err.message) return err.message;
   return fallback;
 };
