@@ -37,13 +37,30 @@ export const updateProfileSchema = z
   });
 
 /* ---------------------------- EVENTS ---------------------------- */
+const latitude = z.coerce.number().min(-90, "must be between -90 and 90").max(90, "must be between -90 and 90");
+const longitude = z.coerce.number().min(-180, "must be between -180 and 180").max(180, "must be between -180 and 180");
+
+/**
+ * Location accepts either a bare address string (server geocodes it) or an
+ * address plus explicit coordinates (from a map picker or browser geolocation,
+ * which is both faster and more accurate).
+ */
+export const locationInputSchema = z.union([
+  z.string().trim().min(3, "must be at least 3 characters").max(200),
+  z.object({
+    address: z.string().trim().min(3).max(200),
+    lat: latitude.optional(),
+    lng: longitude.optional(),
+  }),
+]);
+
 export const createEventSchema = z.object({
   title: z.string().trim().min(3, "must be at least 3 characters").max(100),
   sport: z.string().trim().min(2).max(40),
   date: z.coerce
     .date({ error: "must be a valid date" })
     .refine((d) => d.getTime() > Date.now(), { message: "must be in the future" }),
-  location: z.string().trim().min(3).max(200),
+  location: locationInputSchema,
   maxPlayers: z.coerce
     .number()
     .int("must be a whole number")
@@ -51,9 +68,36 @@ export const createEventSchema = z.object({
     .max(100),
 });
 
-export const eventQuerySchema = z.object({
-  sport: z.string().trim().max(40).optional(),
-});
+const MAX_RADIUS_METRES = 200_000; // 200km — beyond this "nearby" is meaningless
+
+export const eventQuerySchema = z
+  .object({
+    sport: z.string().trim().max(40).optional(),
+    lat: latitude.optional(),
+    lng: longitude.optional(),
+    radius: z.coerce
+      .number()
+      .int()
+      .positive("must be greater than 0")
+      .max(MAX_RADIUS_METRES, `must be at most ${MAX_RADIUS_METRES} metres`)
+      .optional(),
+    // Hide events that have already started. Defaults on so the discovery
+    // page never shows something you cannot join.
+    upcoming: z
+      .enum(["true", "false"])
+      .optional()
+      .transform((v) => v !== "false"),
+  })
+  // A radius search needs a centre; lat without lng (or vice versa) is a
+  // client bug worth surfacing rather than silently ignoring.
+  .refine((q) => (q.lat === undefined) === (q.lng === undefined), {
+    message: "lat and lng must be provided together",
+    path: ["lat"],
+  })
+  .refine((q) => q.radius === undefined || q.lat !== undefined, {
+    message: "radius requires lat and lng",
+    path: ["radius"],
+  });
 
 /* --------------------------- FEEDBACK --------------------------- */
 // `name` and `email` are intentionally absent: they are taken from the

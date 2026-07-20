@@ -78,7 +78,7 @@ const Reminders = () => {
                                     weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
                                 })}
                             </p>
-                            <p className="event-detail"><strong>Where:</strong> {event.location}</p>
+                            <p className="event-detail"><strong>Where:</strong> {event.location?.address}</p>
                             <div className="card-footer">
                                 <span className="spots-info">
                                     {event.currentPlayers.length} / {event.maxPlayers} players

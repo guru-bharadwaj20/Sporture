@@ -578,3 +578,74 @@
     padding: 60px 24px;
   }
 }
+/* ---------------- Proximity search ---------------- */
+
+/* Second row of the filter panel, under the sport selector. */
+.filter-section .filter-bar + .filter-bar {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.locate-btn,
+.clear-location-btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.locate-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.35);
+}
+
+.locate-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.45);
+}
+
+.locate-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.clear-location-btn {
+  background: #f1f5f9;
+  color: #475569;
+  border: 2px solid #e2e8f0;
+}
+
+.clear-location-btn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.geo-error {
+  max-width: 1400px;
+  margin: -24px auto 24px;
+  padding: 12px 20px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Distance chip on each event card. */
+.distance-badge {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 3px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4338ca;
+  background: #e0e7ff;
+  border-radius: 999px;
+  white-space: nowrap;
+}

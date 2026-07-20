@@ -40,11 +40,9 @@ const Dashboard = () => {
 
         // Calculate Popular Venues from Events Data
         const locationCounts = allEvents.reduce((acc, event) => {
-          if (event.location && typeof event.location === 'string') {
-            const location = event.location.trim();
-            if (location) {
-              acc[location] = (acc[location] || 0) + 1;
-            }
+          const venue = event.location?.address?.trim();
+          if (venue) {
+            acc[venue] = (acc[venue] || 0) + 1;
           }
           return acc;
         }, {});
@@ -231,7 +229,7 @@ const Dashboard = () => {
               {events.length > 3 && (<button className="view-all-btn" onClick={() => setShowAllEvents(!showAllEvents)}>{showAllEvents ? 'View Less' : 'View All'}</button>)}
             </div>
             <div className="events-list">
-              {eventsToShow.length > 0 ? (eventsToShow.map((event, index) => (<div key={event._id} className={`event-card ${eventColors[index % eventColors.length]}`} onClick={() => navigate(`/events/${event._id}`)}><div className="event-main"><div className="event-sport">{event.title}</div><div className="event-spots">{event.currentPlayers.length}/{event.maxPlayers} Spots</div></div><div className="event-venue">{event.location}</div><div className="event-time">{new Date(event.date).toLocaleString('en-US', { weekday: 'long', hour: 'numeric', minute: 'numeric', hour12: true })}</div></div>))) : (<p style={{textAlign: 'center', color: '#64748b'}}>No upcoming events found.</p>)}
+              {eventsToShow.length > 0 ? (eventsToShow.map((event, index) => (<div key={event._id} className={`event-card ${eventColors[index % eventColors.length]}`} onClick={() => navigate(`/events/${event._id}`)}><div className="event-main"><div className="event-sport">{event.title}</div><div className="event-spots">{event.currentPlayers.length}/{event.maxPlayers} Spots</div></div><div className="event-venue">{event.location?.address}</div><div className="event-time">{new Date(event.date).toLocaleString('en-US', { weekday: 'long', hour: 'numeric', minute: 'numeric', hour12: true })}</div></div>))) : (<p style={{textAlign: 'center', color: '#64748b'}}>No upcoming events found.</p>)}
             </div>
           </div>
           <div className="activity-right">

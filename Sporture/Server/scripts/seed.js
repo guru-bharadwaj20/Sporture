@@ -166,7 +166,7 @@ const eventsByEmail = [
     title: "Blore vs Hyd",
     sport: "Cricket",
     date: daysFromNow(3, 10, 30),
-    location: "Chinnaswamy Stadium",
+    location: { address: "M. Chinnaswamy Stadium, Bengaluru", lat: 12.9788, lng: 77.5996 },
     maxPlayers: 22,
     createdByEmail: "shri@sporture.com",
     playerEmails: ["shri@sporture.com"],
@@ -175,7 +175,7 @@ const eventsByEmail = [
     title: "Saturday Badminton Doubles",
     sport: "Badminton",
     date: daysFromNow(5, 18, 30),
-    location: "City Sports Hall",
+    location: { address: "Koramangala Indoor Stadium, Bengaluru", lat: 12.9352, lng: 77.6245 },
     maxPlayers: 8,
     createdByEmail: "ahana@sporture.com",
     playerEmails: ["radha@example.com", "ahana@sporture.com"],
@@ -184,7 +184,7 @@ const eventsByEmail = [
     title: "Sunday Morning Football",
     sport: "Football",
     date: daysFromNow(6, 8, 0),
-    location: "Community Ground",
+    location: { address: "Sree Kanteerava Stadium, Bengaluru", lat: 12.9592, lng: 77.5936 },
     maxPlayers: 22,
     createdByEmail: "srivani@sporture.com",
     playerEmails: ["srivani@sporture.com", "arjun@sporture.com"],
@@ -193,7 +193,7 @@ const eventsByEmail = [
     title: "Weeknight Tennis Practice",
     sport: "Tennis",
     date: daysFromNow(2, 19, 0),
-    location: "Elite Sports Club",
+    location: { address: "Indiranagar Club, Bengaluru", lat: 12.9784, lng: 77.6408 },
     maxPlayers: 4,
     createdByEmail: "shri@sporture.com",
     playerEmails: ["shri@sporture.com"],
@@ -202,7 +202,7 @@ const eventsByEmail = [
     title: "Neighborhood Basketball Pickup",
     sport: "Basketball",
     date: daysFromNow(4, 17, 0),
-    location: "Eastside Court",
+    location: { address: "HSR Layout Sports Complex, Bengaluru", lat: 12.9116, lng: 77.6474 },
     maxPlayers: 10,
     createdByEmail: "shri@sporture.com",
     playerEmails: ["shri@sporture.com", "rohit@sporture.com"],
@@ -211,7 +211,7 @@ const eventsByEmail = [
     title: "Friendly Cricket Match",
     sport: "Cricket",
     date: daysFromNow(9, 8, 0),
-    location: "Greenfield Grounds",
+    location: { address: "Whitefield Sports Arena, Bengaluru", lat: 12.9698, lng: 77.75 },
     maxPlayers: 22,
     createdByEmail: "srivani@sporture.com",
     playerEmails: ["radha@example.com", "vikram@sporture.com"],
@@ -220,7 +220,7 @@ const eventsByEmail = [
     title: "Evening Badminton Singles",
     sport: "Badminton",
     date: daysFromNow(7, 19, 30),
-    location: "North Court",
+    location: { address: "Jayanagar Sports Complex, Bengaluru", lat: 12.925, lng: 77.5938 },
     maxPlayers: 8,
     createdByEmail: "meera@sporture.com",
     playerEmails: [],
@@ -229,7 +229,7 @@ const eventsByEmail = [
     title: "Open Tennis Ladder",
     sport: "Tennis",
     date: daysFromNow(8, 15, 0),
-    location: "Sunrise Tennis Club",
+    location: { address: "Marathahalli Turf, Bengaluru", lat: 12.9591, lng: 77.6974 },
     maxPlayers: 16,
     createdByEmail: "ahana@sporture.com",
     playerEmails: ["ahana@sporture.com", "ananya@sporture.com"],
@@ -238,7 +238,7 @@ const eventsByEmail = [
     title: "Sunday AM Cricket Nets",
     sport: "Cricket",
     date: daysFromNow(11, 6, 0),
-    location: "Stadium Practice Nets",
+    location: { address: "Yelahanka Stadium, Bengaluru", lat: 13.1007, lng: 77.5963 },
     maxPlayers: 12,
     createdByEmail: "arjun@sporture.com",
     playerEmails: ["arjun@sporture.com"],
@@ -247,7 +247,7 @@ const eventsByEmail = [
     title: "Coed Football 7s",
     sport: "Football",
     date: daysFromNow(14, 6, 0),
-    location: "Riverside Pitch",
+    location: { address: "Electronic City Sports Hub, Bengaluru", lat: 12.8452, lng: 77.6602 },
     maxPlayers: 14,
     createdByEmail: "radha@example.com",
     playerEmails: ["radha@example.com", "rohit@sporture.com"],
@@ -256,7 +256,7 @@ const eventsByEmail = [
     title: "Weekend Badminton Meetup",
     sport: "Badminton",
     date: daysFromNow(15, 12, 0),
-    location: "Community Hall Court 2",
+    location: { address: "Malleshwaram Grounds, Bengaluru", lat: 13.0035, lng: 77.5647 },
     maxPlayers: 8,
     createdByEmail: "kavya@sporture.com",
     playerEmails: ["kavya@sporture.com", "ahana@sporture.com"],
@@ -265,7 +265,7 @@ const eventsByEmail = [
     title: "Sunset Basketball 3v3",
     sport: "Basketball",
     date: daysFromNow(16, 17, 30),
-    location: "Westend Court",
+    location: { address: "Hebbal Lake Courts, Bengaluru", lat: 13.0358, lng: 77.597 },
     maxPlayers: 6,
     createdByEmail: "meera@sporture.com",
     playerEmails: ["meera@sporture.com"],
@@ -295,7 +295,9 @@ async function upsertUsersAndGetMap() {
 async function run() {
   try {
     await mongoose.connect(MONGO);
-    console.log("✅ Connected to MongoDB at", MONGO);
+    // Never log MONGO directly — the connection string embeds the password,
+    // which would then sit in terminal scrollback and CI logs.
+    console.log(`✅ Connected to MongoDB (${mongoose.connection.name})`);
 
     // 1) Upsert users and build email -> ObjectId map
     console.log("👤 Ensuring users exist...");
@@ -311,7 +313,12 @@ async function run() {
       title: e.title,
       sport: e.sport,
       date: e.date,
-      location: e.location,
+      // Coordinates are supplied inline so seeding never depends on the
+      // geocoding service being reachable.
+      location: {
+        address: e.location.address,
+        geo: { type: "Point", coordinates: [e.location.lng, e.location.lat] },
+      },
       maxPlayers: e.maxPlayers,
       createdBy: emailToId.get(e.createdByEmail), // ObjectId
       currentPlayers: (e.playerEmails || []).map((em) => emailToId.get(em)), // [ObjectId]

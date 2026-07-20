@@ -2,7 +2,16 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api, { joinEvent } from "../utils/api";
+import { useGeolocation, formatDistance } from "../utils/useGeolocation";
 import "./EventDiscovery.css";
+
+const RADIUS_OPTIONS = [
+  { label: "2 km", value: 2000 },
+  { label: "5 km", value: 5000 },
+  { label: "10 km", value: 10000 },
+  { label: "25 km", value: 25000 },
+  { label: "50 km", value: 50000 },
+];
 
 const EventDiscovery = () => {
   const navigate = useNavigate();
@@ -10,9 +19,13 @@ const EventDiscovery = () => {
   const [loading, setLoading] = useState(true);
   const [sportsList, setSportsList] = useState([]);
   const [sportFilter, setSportFilter] = useState("All");
+  const [radius, setRadius] = useState(10000);
   const [joining, setJoining] = useState({});
   const [userId, setUserId] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const { coords, status: geoStatus, error: geoError, request: requestLocation, clear: clearLocation } =
+    useGeolocation();
 
   // ✅ Check authentication on mount
   useEffect(() => {
@@ -53,7 +66,16 @@ const EventDiscovery = () => {
     const fetchEvents = async () => {
       setLoading(true);
       try {
-        const params = sportFilter === "All" ? {} : { sport: sportFilter };
+        const params = {};
+        if (sportFilter !== "All") params.sport = sportFilter;
+        // Sending coordinates switches the API to proximity search: results
+        // come back nearest-first with a distanceMetres field.
+        if (coords) {
+          params.lat = coords.lat;
+          params.lng = coords.lng;
+          params.radius = radius;
+        }
+
         const res = await api.get("/events", { params });
         setEvents(res.data || []);
       } catch (err) {
@@ -64,7 +86,7 @@ const EventDiscovery = () => {
       }
     };
     fetchEvents();
-  }, [sportFilter]);
+  }, [sportFilter, coords, radius]);
 
   // ✅ Handle Join - Check Authentication First
   const handleJoin = async (eventId) => {
@@ -141,12 +163,48 @@ const EventDiscovery = () => {
             ))}
           </select>
         </div>
+
+        <div className="filter-bar">
+          {!coords ? (
+            <button
+              type="button"
+              className="locate-btn"
+              onClick={requestLocation}
+              disabled={geoStatus === "locating"}
+            >
+              {geoStatus === "locating" ? "📍 Finding you..." : "📍 Find events near me"}
+            </button>
+          ) : (
+            <>
+              <label htmlFor="radius">Within:</label>
+              <select
+                id="radius"
+                value={radius}
+                onChange={(e) => setRadius(Number(e.target.value))}
+              >
+                {RADIUS_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              <button type="button" className="clear-location-btn" onClick={clearLocation}>
+                Clear location
+              </button>
+            </>
+          )}
+        </div>
       </div>
+
+      {geoError && <p className="geo-error">{geoError}</p>}
 
       <div className="event-count">
         <p>
           Showing <strong>{events.length}</strong> event{events.length !== 1 ? 's' : ''}{" "}
           {sportFilter !== "All" && <>for "{sportFilter}"</>}
+          {coords && (
+            <> within {RADIUS_OPTIONS.find((o) => o.value === radius)?.label} of you</>
+          )}
         </p>
       </div>
 
@@ -154,7 +212,11 @@ const EventDiscovery = () => {
         <div className="no-events">
           <span className="no-events-icon">🔍</span>
           <h3>No events found{sportFilter !== "All" ? ` for "${sportFilter}"` : ""}</h3>
-          <p>Be the first to create an exciting sports event!</p>
+          {coords ? (
+            <p>Nothing within {RADIUS_OPTIONS.find((o) => o.value === radius)?.label} of you — try widening the radius.</p>
+          ) : (
+            <p>Be the first to create an exciting sports event!</p>
+          )}
           <Link to="/create-event" className="create-link">
             ➕ Create Event Now
           </Link>
@@ -187,7 +249,10 @@ const EventDiscovery = () => {
                   </p>
                   <p>
                     <span className="event-icon">📍</span>
-                    <strong>Location:</strong> {event.location}
+                    <strong>Location:</strong> {event.location?.address}
+                    {event.distanceMetres !== undefined && (
+                      <span className="distance-badge">{formatDistance(event.distanceMetres)}</span>
+                    )}
                   </p>
                   <p>
                     <span className="event-icon">👤</span>

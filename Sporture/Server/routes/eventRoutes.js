@@ -9,8 +9,37 @@ import {
   idParamSchema,
 } from "../validators/schemas.js";
 import { AppError } from "../utils/AppError.js";
+import { geocodeAddress } from "../services/geocoder.js";
 
 const router = express.Router();
+
+/**
+ * Turns validated location input into the stored shape. Coordinates supplied by
+ * the client are trusted (they come from a map picker or the browser's
+ * geolocation API and are more precise); a bare address is geocoded.
+ */
+const resolveLocation = async (input) => {
+  if (typeof input === "string") {
+    const { lat, lng } = await geocodeAddress(input);
+    return { address: input, geo: { type: "Point", coordinates: [lng, lat] } };
+  }
+
+  if (input.lat !== undefined && input.lng !== undefined) {
+    return {
+      address: input.address,
+      geo: { type: "Point", coordinates: [input.lng, input.lat] },
+    };
+  }
+
+  const { lat, lng } = await geocodeAddress(input.address);
+  return { address: input.address, geo: { type: "Point", coordinates: [lng, lat] } };
+};
+
+/** Escapes regex metacharacters so user input is matched literally. */
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Applied when a search supplies a centre point but no explicit radius.
+const DEFAULT_RADIUS_METRES = 25_000;
 
 /* -------------------------- CREATE EVENT -------------------------- */
 router.post("/", auth, validate(createEventSchema), async (req, res, next) => {
@@ -18,7 +47,8 @@ router.post("/", auth, validate(createEventSchema), async (req, res, next) => {
     const { title, sport, date, location, maxPlayers } = req.body;
 
     const event = await Event.create({
-      title, sport, date, location, maxPlayers,
+      title, sport, date, maxPlayers,
+      location: await resolveLocation(location),
       createdBy: req.user._id,
       currentPlayers: [req.user._id],
     });
@@ -35,18 +65,64 @@ router.post("/", auth, validate(createEventSchema), async (req, res, next) => {
 /* --------------------------- GET EVENTS --------------------------- */
 router.get("/", validate(eventQuerySchema, "query"), async (req, res, next) => {
   try {
-    const { sport } = req.query;
-    const query = {};
+    const { sport, lat, lng, radius, upcoming } = req.query;
+
+    const filter = {};
     if (sport) {
-      // Escape regex metacharacters so a value like ".*" can't match everything
-      // or cause catastrophic backtracking.
-      const escaped = sport.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      query.sport = { $regex: `^${escaped}$`, $options: "i" };
+      // Matched literally: unescaped, a value like ".*" would match every sport.
+      filter.sport = { $regex: `^${escapeRegex(sport)}$`, $options: "i" };
     }
-    const events = await Event.find(query)
-      .populate("createdBy", "name")
-      .populate("currentPlayers", "name")
-      .sort({ date: 1 });
+    if (upcoming) {
+      filter.date = { $gte: new Date() };
+    }
+
+    // Without a centre point there is nothing to measure distance from, so
+    // fall back to a plain chronological listing.
+    if (lat === undefined) {
+      const events = await Event.find(filter)
+        .populate("createdBy", "name")
+        .populate("currentPlayers", "name")
+        .sort({ date: 1 });
+      return res.json(events);
+    }
+
+    // $geoNear must be the first stage in the pipeline and applies its own
+    // filter, which is why `filter` is passed to it rather than added as a
+    // separate $match. Results come back sorted nearest-first.
+    const events = await Event.aggregate([
+      {
+        $geoNear: {
+          near: { type: "Point", coordinates: [lng, lat] },
+          distanceField: "distanceMetres",
+          maxDistance: radius ?? DEFAULT_RADIUS_METRES,
+          query: filter,
+          spherical: true,
+        },
+      },
+      { $limit: 200 },
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy",
+          pipeline: [{ $project: { name: 1 } }],
+        },
+      },
+      { $unwind: "$createdBy" },
+      {
+        $lookup: {
+          from: "users",
+          localField: "currentPlayers",
+          foreignField: "_id",
+          as: "currentPlayers",
+          pipeline: [{ $project: { name: 1 } }],
+        },
+      },
+      // Rounded because sub-metre precision is noise given geocoding accuracy.
+      { $addFields: { distanceMetres: { $round: ["$distanceMetres", 0] } } },
+    ]);
+
     res.json(events);
   } catch (err) {
     next(err);

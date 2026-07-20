@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createEvent } from "../utils/api"; // ✅ token-aware axios instance
+import { useGeolocation } from "../utils/useGeolocation";
 import './CreateEvent.css';
 
 const CreateEvent = () => {
@@ -10,10 +11,13 @@ const CreateEvent = () => {
     sport: '',
     date: '',
     maxPlayers: 2,
-    location: '', // ✅ keep same as backend
+    location: '',
   });
+  const [submitting, setSubmitting] = useState(false);
 
   const navigate = useNavigate();
+  const { coords, status: geoStatus, error: geoError, request: requestLocation, clear: clearCoords } =
+    useGeolocation();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -21,23 +25,30 @@ const CreateEvent = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       const eventData = {
         title: formData.title,
         sport: formData.sport,
         date: formData.date,
         maxPlayers: formData.maxPlayers,
-        location: formData.location || "Location unavailable",
+        // Sending coordinates when we have them skips server-side geocoding,
+        // which is both faster and more precise than resolving the text.
+        location: coords
+          ? { address: formData.location, lat: coords.lat, lng: coords.lng }
+          : formData.location,
       };
 
-      console.log("Creating event with token + data:", eventData);
-
       const res = await createEvent(eventData); // ✅ token auto-attached
-      alert('✅ Event Created Successfully!');
       navigate(`/events/${res.data._id}`);
     } catch (err) {
       console.error('❌ Event creation error:', err.response?.data || err.message);
-      alert(`❌ ${err.response?.data?.message || 'Event creation failed'}`);
+      const data = err.response?.data;
+      // Validation failures carry a details array; surface it rather than the
+      // generic message, so the user knows which field to fix.
+      alert(`❌ ${data?.details?.join('\n') || data?.message || 'Event creation failed'}`);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -69,14 +80,30 @@ const CreateEvent = () => {
             onChange={handleChange}
             required
           />
-          <input
-            type="text"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            placeholder="Location Address"
-            required
-          />
+          <div className="location-field">
+            <input
+              type="text"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              placeholder="Venue address (e.g. Chinnaswamy Stadium, Bengaluru)"
+              required
+            />
+            {coords ? (
+              <p className="location-hint pinned">
+                📍 Pinned to your current position
+                <button type="button" onClick={clearCoords}>use the address instead</button>
+              </p>
+            ) : (
+              <p className="location-hint">
+                <button type="button" onClick={requestLocation} disabled={geoStatus === "locating"}>
+                  {geoStatus === "locating" ? "Finding you..." : "📍 Use my current location"}
+                </button>
+                {" "}— otherwise we'll look up the address you typed.
+              </p>
+            )}
+            {geoError && <p className="location-error">{geoError}</p>}
+          </div>
           <div>
             <label className="create-event-label">Max Players</label>
             <input
@@ -88,8 +115,8 @@ const CreateEvent = () => {
               required
             />
           </div>
-          <button type="submit" className="create-event-btn">
-            Create Event
+          <button type="submit" className="create-event-btn" disabled={submitting}>
+            {submitting ? 'Creating...' : 'Create Event'}
           </button>
         </form>
       </div>

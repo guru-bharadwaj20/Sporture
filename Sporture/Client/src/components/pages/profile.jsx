@@ -234,7 +234,7 @@ const Profile = () => {
                   <div key={e._id} className="event-card">
                     <h3>🏅 {e.title}</h3>
                     <p>
-                      {new Date(e.date).toLocaleDateString()} • {e.location}
+                      {new Date(e.date).toLocaleDateString()} • {e.location?.address}
                     </p>
                     <span className="slot-badge">{e.currentPlayers.length}/{e.maxPlayers} filled</span>
                   </div>
