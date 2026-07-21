@@ -1,8 +1,10 @@
 import mongoose from "mongoose";
-import { config } from "../config/env.js";
+import { config, assertValidConfig } from "../config/env.js";
 
 import Event from "../models/Event.js";
 import { geocodeAddress } from "../services/geocoder.js";
+
+assertValidConfig();
 
 const DRY_RUN = process.argv.includes("--dry-run");
 

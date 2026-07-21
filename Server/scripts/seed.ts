@@ -1,12 +1,12 @@
 import mongoose, { type Types } from "mongoose";
 import bcrypt from "bcrypt";
-import dotenv from "dotenv";
-dotenv.config({ quiet: true });
-
+import { config, assertValidConfig } from "../config/env.js";
 import User from "../models/userModel.js";
 import Event from "../models/Event.js";
 
-const MONGO = process.env.MONGO_URI || "mongodb://localhost:27017/sporturedb";
+assertValidConfig();
+
+const MONGO = config.mongoUri;
 
 const SEED_PASSWORD = process.env.SEED_PASSWORD || "Password123!";
 

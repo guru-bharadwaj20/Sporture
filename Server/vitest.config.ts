@@ -7,6 +7,9 @@ export default defineConfig({
     pool: "forks",
     testTimeout: 30000,
     hookTimeout: 120000,
+    env: {
+      NODE_ENV: "test",
+    },
     coverage: {
       provider: "v8",
       include: ["routes/**", "controllers/**", "middleware/**", "models/**", "validators/**"],

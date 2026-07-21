@@ -6,17 +6,25 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   server:
-    name: Server (typecheck + test)
+    name: Server (typecheck + build + test)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: Server
+
+    env:
+      NODE_ENV: test
+      CI: true
 
     steps:
       - uses: actions/checkout@v4
@@ -27,26 +35,36 @@ jobs:
           cache: npm
           cache-dependency-path: Server/package-lock.json
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-      - run: npm run typecheck
+      - name: Typecheck
+        run: npm run typecheck
 
-      - run: npm run build
+      - name: Build
+        run: npm run build
 
       - name: Cache mongodb-memory-server binary
         uses: actions/cache@v4
         with:
           path: ~/.cache/mongodb-binaries
-          key: mongodb-binaries-${{ runner.os }}
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('Server/package-lock.json') }}
+          restore-keys: |
+            mongodb-binaries-${{ runner.os }}-
 
-      - run: npm test
+      - name: Test
+        run: npm test
 
   client:
     name: Client (typecheck + lint + test + build)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: Client
+
+    env:
+      CI: true
 
     steps:
       - uses: actions/checkout@v4
@@ -57,8 +75,17 @@ jobs:
           cache: npm
           cache-dependency-path: Client/package-lock.json
 
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm test
-      - run: npm run build
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build

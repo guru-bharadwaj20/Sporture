@@ -1,6 +1,8 @@
-import { config } from "./config/env.js";
+import { config, assertValidConfig } from "./config/env.js";
 import connectDB from "./config/db.js";
 import { createApp } from "./app.js";
+
+assertValidConfig();
 
 await connectDB();
 
