@@ -1,7 +1,7 @@
 // Client/src/components/pages/feedback.jsx
 import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
 import type { FeedbackDTO } from "@shared/api";
-import "./Feedback.css";
+import "./feedback.css";
 import { getFeedback, postFeedback } from "../utils/api";
 import { apiErrorMessage } from "../utils/errors";
 
@@ -116,9 +116,9 @@ const Feedback = () => {
                 </div>
                 <p className="feedback-comment">“{f.comment}”</p>
                 <div className="feedback-footer">
-                  {/* THE FIX IS HERE: f.createdAt instead of f.date */}
+                  {/* No email here: the public listing withholds it server-side
+                      (select("-email")), so rendering it showed a bare icon. */}
                   <small>📅 {new Date(f.createdAt).toLocaleDateString()}</small>
-                  <small>📧 {f.email}</small>
                 </div>
               </div>
             ))

@@ -27,6 +27,12 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     css: false, // components import .css; jsdom doesn't need it parsed
+    // Page tests drive real interactions — userEvent types character by
+    // character with a delay between each — so a form with five fields can
+    // take several seconds. Vitest's 5s default made those flake under the
+    // parallel load of the whole suite while passing in isolation. Still
+    // short enough that an actual deadlock fails quickly.
+    testTimeout: 20_000,
     coverage: {
       provider: "v8",
       include: ["src/components/**"],

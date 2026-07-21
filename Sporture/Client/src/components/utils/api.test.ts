@@ -23,6 +23,17 @@ describe("api client", () => {
     expect(api.defaults.baseURL).toMatch(/\/api$/);
   });
 
+  it("treats an explicitly empty API origin as same-origin", () => {
+    // The Docker image builds with VITE_API_URL="" so nginx can proxy /api.
+    // Using `||` here would treat "" as unset and fall back to
+    // localhost:5000, a port the container does not publish.
+    const resolve = (v: string | undefined) => v ?? "http://localhost:5000";
+
+    expect(resolve("")).toBe("");
+    expect(resolve(undefined)).toBe("http://localhost:5000");
+    expect(resolve("https://api.example.com")).toBe("https://api.example.com");
+  });
+
   it("attaches the bearer token when one is stored", async () => {
     setToken("abc.def.ghi");
     const config = await runRequestInterceptor();

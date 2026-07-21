@@ -55,8 +55,10 @@ const Register = () => {
       setError("Passwords do not match");
       return;
     }
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters");
+    // Must match the server's registerSchema (min 8). A lower bar here lets
+    // a 6-character password through the form only to be rejected by the API.
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters");
       return;
     }
     if (formData.favSports.length === 0) {

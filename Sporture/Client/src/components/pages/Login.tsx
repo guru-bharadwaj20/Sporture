@@ -1,6 +1,6 @@
 // src/components/pages/Login.jsx
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { loginUser, getCurrentUser } from "../utils/api";
 import { setStoredUser, setToken } from "../utils/storage";
 import { apiErrorMessage } from "../utils/errors";
@@ -112,16 +112,18 @@ const Login = () => {
 
         <p className="auth-footer">
           Don't have an account?{" "}
-          <span onClick={() => navigate("/register")} className="link">
+          {/* A real link, not a span with onClick: this must be focusable,
+              announced as a link, and openable in a new tab. */}
+          <Link to="/register" className="link">
             Sign up here
-          </span>
+          </Link>
         </p>
       </div>
 
       <div className="back-to-home">
-        <a onClick={() => navigate("/")} className="back-link">
+        <Link to="/" className="back-link">
           ← Back to Home
-        </a>
+        </Link>
       </div>
     </div>
   );

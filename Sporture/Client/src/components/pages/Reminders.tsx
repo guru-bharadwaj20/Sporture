@@ -34,11 +34,16 @@ const Reminders = () => {
     const getTimeDifference = (eventDate: string) => {
         const now = new Date();
         const eventTime = new Date(eventDate);
-        const diffInMs = eventTime.getTime() - now.getTime();
 
-        const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-        const diffInHours = Math.floor((diffInMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const diffInMinutes = Math.floor((diffInMs % (1000 * 60 * 60)) / (1000 * 60));
+        // Round to the nearest minute before decomposing. Flooring the raw
+        // millisecond gap reports an event exactly three days out as "in 2
+        // days", because it is really 2 days 23:59:59.9 away. Countdowns are
+        // not meaningful below a minute, so this loses nothing.
+        const totalMinutes = Math.round((eventTime.getTime() - now.getTime()) / 60000);
+
+        const diffInDays = Math.floor(totalMinutes / (60 * 24));
+        const diffInHours = Math.floor((totalMinutes % (60 * 24)) / 60);
+        const diffInMinutes = totalMinutes % 60;
         
         if (diffInDays > 0) return `in ${diffInDays} day${diffInDays > 1 ? 's' : ''}`;
         if (diffInHours > 0) return `in ${diffInHours} hour${diffInHours > 1 ? 's' : ''}`;

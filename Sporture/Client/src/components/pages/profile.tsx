@@ -5,7 +5,7 @@ import { getCurrentUser, updateUserById, getJoinedEvents, uploadUserPhoto } from
 import { setStoredUser } from "../utils/storage";
 import { apiErrorMessage } from "../utils/errors";
 import { useToast } from "../common/toastContext";
-import "./Profile.css";
+import "./profile.css";
 
 const Profile = () => {
   const toast = useToast();

@@ -17,10 +17,20 @@ import type {
   UserDTO,
 } from "@shared/api";
 
-// Configured per-environment via .env (see .env.example). Falls back to the
-// local dev server so a fresh clone works without setup.
+/**
+ * Where the API lives.
+ *
+ * `??`, not `||`: an explicitly empty VITE_API_URL means "same origin", which
+ * is how the Docker image is built — nginx proxies /api to the API container,
+ * so the browser must call a relative path. With `||` the empty string is
+ * falsy and would silently fall back to localhost:5000, a port that is not
+ * published from the container.
+ *
+ * Unset (the usual local case) still falls back, so a fresh clone runs with
+ * no configuration.
+ */
 export const API_ORIGIN: string =
-  import.meta.env.VITE_API_URL || "http://localhost:5000";
+  import.meta.env.VITE_API_URL ?? "http://localhost:5000";
 
 const api = axios.create({
   baseURL: `${API_ORIGIN}/api`,

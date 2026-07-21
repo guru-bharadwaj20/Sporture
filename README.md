@@ -84,6 +84,7 @@ by sport and radius — backed by MongoDB geospatial indexing rather than string
 | **Security** | Helmet, CORS allowlist, express-rate-limit |
 | **Testing** | Vitest, Supertest, mongodb-memory-server, React Testing Library |
 | **CI** | GitHub Actions |
+| **Containers** | Docker, Docker Compose, nginx |
 
 ---
 
@@ -288,7 +289,28 @@ human-readable `reasons`:
 ### Prerequisites
 Node.js 20+, and MongoDB (local or Atlas).
 
-### Setup
+### Run it with Docker (nothing to install but Docker)
+
+```bash
+git clone https://github.com/guru-bharadwaj20/Eventure.git
+cd Eventure
+
+docker compose up --build                 # database, API and web
+docker compose --profile seed run --rm seed   # optional demo data
+```
+
+The app is then on **http://localhost:8080**. Sign in as `radha@example.com`
+with `Password123!` and search near Koramangala (12.9352, 77.6245).
+
+No MongoDB install and no Atlas account: compose runs Mongo alongside the app.
+nginx serves the built client and proxies `/api` to the API container, so the
+browser talks to a single origin and CORS never enters the picture. The API
+image runs as an unprivileged user and both images are multi-stage, so build
+tooling is absent from the runtime layer.
+
+`docker compose down -v` stops everything and deletes the database volume.
+
+### Setup for development
 
 ```bash
 git clone https://github.com/guru-bharadwaj20/Eventure.git
@@ -369,12 +391,13 @@ safe to run in CI. Coverage is weighted toward security properties rather than h
 cd Sporture/Client
 npm run typecheck
 npm run lint
-npm test                # 80 tests (Vitest + React Testing Library)
+npm test                # 179 tests (Vitest + React Testing Library)
 npm run build           # typechecks, then bundles
 ```
 
 Client tests run in jsdom and mock the API module, so they need neither a
-server nor a database. They cover the parts most likely to break quietly:
+server nor a database. Every page is covered as well as the shared utilities.
+They target the parts most likely to break quietly:
 
 - `storage.ts` returns `null` for malformed or absent session data instead of throwing
 - `errors.ts` prefers per-field validation `details` over the generic message
@@ -383,5 +406,9 @@ server nor a database. They cover the parts most likely to break quietly:
 - toasts stack, auto-expire, and announce politely without stealing focus
 - recommendation cards show a percentage rather than a raw score, and cap reasons at three
 - the API client attaches the token per request, and never sends a half-populated coordinate pair
+- discovery only sends coordinates once the user asks, and clears the session on an expired token
+- event creation sends a dropped pin's coordinates in preference to geocoding the typed address
+- the profile form submits only the fields a user is allowed to change
+- registration enforces the same password length the server does
 
 CI runs all of the above on every push and pull request.
