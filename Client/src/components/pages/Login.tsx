@@ -106,8 +106,6 @@ const Login = () => {
 
         <p className="auth-footer">
           Don't have an account?{" "}
-          {/* A real link, not a span with onClick: this must be focusable,
-              announced as a link, and openable in a new tab. */}
           <Link to="/register" className="link">
             Sign up here
           </Link>
