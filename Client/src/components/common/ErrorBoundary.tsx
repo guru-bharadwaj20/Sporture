@@ -3,7 +3,6 @@ import "./ErrorBoundary.css";
 
 interface Props {
   children: ReactNode;
-  /** Optional override for the fallback UI. */
   fallback?: ReactNode;
 }
 
@@ -11,16 +10,6 @@ interface State {
   error: Error | null;
 }
 
-/**
- * Catches render-time exceptions anywhere below it.
- *
- * Without this, a single thrown error unmounts the entire React tree and the
- * user is left staring at a blank white page with no indication anything went
- * wrong. That is not hypothetical here — a Leaflet call that threw during a
- * map update took the whole app down exactly this way during development.
- *
- * Must be a class: there is still no hook equivalent of componentDidCatch.
- */
 class ErrorBoundary extends Component<Props, State> {
   state: State = { error: null };
 
@@ -29,8 +18,6 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo): void {
-    // In a deployed app this is where an error reporter (Sentry et al) would
-    // be called. Logging keeps the stack reachable in the meantime.
     console.error("Uncaught render error:", error, info.componentStack);
   }
 
@@ -56,8 +43,6 @@ class ErrorBoundary extends Component<Props, State> {
           </p>
 
           {import.meta.env.DEV && (
-            // Only in development: the message can carry internals that
-            // shouldn't be shown to real users.
             <pre className="error-boundary__detail">{error.message}</pre>
           )}
 

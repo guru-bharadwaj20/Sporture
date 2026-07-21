@@ -3,7 +3,6 @@ import api, { API_ORIGIN, getRecommendedEvents, getEvents } from "./api";
 import { setToken } from "./storage";
 import type { InternalAxiosRequestConfig } from "axios";
 
-/** Runs the request interceptor the way axios would. */
 const runRequestInterceptor = async (
   config: Partial<InternalAxiosRequestConfig> = {}
 ): Promise<InternalAxiosRequestConfig> => {
@@ -24,9 +23,6 @@ describe("api client", () => {
   });
 
   it("treats an explicitly empty API origin as same-origin", () => {
-    // The Docker image builds with VITE_API_URL="" so nginx can proxy /api.
-    // Using `||` here would treat "" as unset and fall back to
-    // localhost:5000, a port the container does not publish.
     const resolve = (v: string | undefined) => v ?? "http://localhost:5000";
 
     expect(resolve("")).toBe("");
@@ -46,7 +42,6 @@ describe("api client", () => {
   });
 
   it("reads the token per request, not once at module load", async () => {
-    // Logging in mid-session must take effect without a page reload.
     const before = await runRequestInterceptor();
     expect(before.headers.Authorization).toBeUndefined();
 
@@ -56,10 +51,6 @@ describe("api client", () => {
   });
 });
 
-/**
- * Swaps in a stub adapter so a call resolves without touching the network,
- * and returns the query params axios would have sent.
- */
 const captureParams = async (call: () => Promise<unknown>) => {
   let sent: Record<string, unknown> | undefined;
   const original = api.defaults.adapter;
@@ -82,8 +73,6 @@ const captureParams = async (call: () => Promise<unknown>) => {
 
 describe("request builders", () => {
   it("omits lat/lng from recommendations when no coords are given", async () => {
-    // Sending lat without lng is a 400 from the server, so the helper must
-    // send neither rather than a partial pair.
     const sent = await captureParams(() => getRecommendedEvents({ limit: 4 }));
 
     expect(sent).toEqual({ limit: 4 });

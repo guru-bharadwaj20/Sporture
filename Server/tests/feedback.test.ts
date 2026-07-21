@@ -28,7 +28,6 @@ describe("POST /api/feedback", () => {
       email: "spoof@evil.com",
     });
 
-    // Identity must come from the token, not the payload.
     expect(res.body.name).toBe(user.name);
     expect(res.body.email).toBe(creds.email.toLowerCase());
   });

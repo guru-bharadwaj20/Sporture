@@ -18,7 +18,6 @@ const feedbackSchema = new Schema<IFeedback>(
     email: { type: String, required: true, lowercase: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
     comment: { type: String, required: true, trim: true },
-    // Author of the feedback, used for ownership checks on delete.
     user: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
   },
   { timestamps: true }

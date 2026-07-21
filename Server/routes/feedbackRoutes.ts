@@ -8,8 +8,6 @@ import { AppError } from "../utils/AppError.js";
 
 const router = express.Router();
 
-/* ------------------------ LIST FEEDBACK ------------------------ */
-// Public, but email is withheld — it is not the public's business.
 router.get("/", async (_req, res, next) => {
   try {
     const feedbacks = await Feedback.find()
@@ -22,14 +20,11 @@ router.get("/", async (_req, res, next) => {
   }
 });
 
-/* ------------------------ SUBMIT FEEDBACK ------------------------ */
 router.post("/", auth, validate(createFeedbackSchema), async (req, res, next) => {
   try {
     const { rating, comment } = req.body as CreateFeedbackInput;
-    const user = req.user!; // guaranteed by `auth`
+    const user = req.user!;
 
-    // Identity comes from the token, never from the request body, so feedback
-    // cannot be posted under another person's name.
     const feedback = await Feedback.create({
       name: user.name,
       email: user.email,
@@ -44,8 +39,6 @@ router.post("/", auth, validate(createFeedbackSchema), async (req, res, next) =>
   }
 });
 
-/* ------------------------ DELETE FEEDBACK ------------------------ */
-// Authors may delete their own feedback; admins may delete any.
 router.delete("/:id", auth, validate(idParamSchema, "params"), async (req, res, next) => {
   try {
     const user = req.user!;

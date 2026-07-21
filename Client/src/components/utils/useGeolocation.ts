@@ -11,13 +11,6 @@ export interface UseGeolocation {
   clear: () => void;
 }
 
-/**
- * Wraps the browser geolocation API in something a component can use directly.
- *
- * Deliberately not automatic on mount: requesting location unprompted triggers
- * a permission dialog before the user knows why it's being asked for, which is
- * both hostile and a reliable way to get permanently denied.
- */
 export const useGeolocation = (): UseGeolocation => {
   const [coords, setCoords] = useState<Coords | null>(null);
   const [status, setStatus] = useState<GeolocationStatus>("idle");
@@ -60,7 +53,6 @@ export const useGeolocation = (): UseGeolocation => {
   return { coords, status, error, request, clear };
 };
 
-/** Renders a metre distance the way a person would say it. */
 export const formatDistance = (metres: number | undefined | null): string => {
   if (metres === undefined || metres === null) return "";
   if (metres < 1000) return `${Math.round(metres / 50) * 50} m away`;

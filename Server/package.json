@@ -1,9 +1,8 @@
 {
-  "name": "server",
+  "name": "sporture-server",
   "version": "1.0.0",
   "type": "module",
-  "description": "",
-  "main": "server.js",
+  "description": "Sporture API — Express, TypeScript, MongoDB",
   "scripts": {
     "start": "node dist/server.js",
     "dev": "tsx watch server.ts",
@@ -15,9 +14,7 @@
     "seed": "tsx scripts/seed.ts",
     "migrate:locations": "tsx scripts/migrate-locations.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
@@ -44,5 +41,6 @@
     "tsx": "^4.23.1",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
-  }
+  },
+  "private": true
 }

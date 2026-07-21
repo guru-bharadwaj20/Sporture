@@ -1,4 +1,3 @@
-// src/components/pages/Dashboard.jsx
 import { useEffect, useState, useRef } from "react";
 import type { EventDTO, UserDTO } from "@shared/api";
 import "./dashboard.css";
@@ -13,7 +12,6 @@ const Dashboard = () => {
   const [user, setUser] = useState<UserDTO | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // State for dynamic functionality
   const [events, setEvents] = useState<EventDTO[]>([]);
   const [popularVenues, setPopularVenues] = useState<Array<{ name: string; bookings: number }>>([]);
   const [showAllEvents, setShowAllEvents] = useState(false);
@@ -34,14 +32,13 @@ const Dashboard = () => {
         const serverUser = userRes?.data?.user;
         if (!serverUser) throw new Error("User not found");
         setUser(serverUser);
-        setStoredUser(serverUser); // Keep local storage in sync
+        setStoredUser(serverUser);
 
         const allEvents = eventsRes.data;
         const sortedEvents = [...allEvents].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         setEvents(sortedEvents);
         eventIds.current = new Set(sortedEvents.map((e) => e._id));
 
-        // Calculate Popular Venues from Events Data
         const locationCounts = allEvents.reduce<Record<string, number>>((acc, event) => {
           const venue = event.location?.address?.trim();
           if (venue) {
@@ -53,7 +50,6 @@ const Dashboard = () => {
           .map(([name, bookings]) => ({ name, bookings }))
           .sort((a, b) => b.bookings - a.bookings);
         setPopularVenues(venuesData);
-
       } catch (err) {
         console.error("Failed to load dashboard data:", err);
         clearSession();
@@ -65,13 +61,12 @@ const Dashboard = () => {
 
     fetchInitialData();
 
-    // Polling logic for notifications
     const intervalId = setInterval(async () => {
       try {
         const res = await getAllEvents();
         const newEvents = res.data;
-        const freshUser = getStoredUser(); // Get latest user data
-        
+        const freshUser = getStoredUser();
+
         const newNotifications: Array<{ id: string; message: string; event: EventDTO }> = [];
         newEvents.forEach((event) => {
           if (!eventIds.current.has(event._id)) {
@@ -82,10 +77,10 @@ const Dashboard = () => {
         if (newNotifications.length > 0) {
           setNotifications((prev) => [...newNotifications, ...prev]);
           setEvents(newEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
-          if (freshUser) setUser(freshUser); // Update user state if new data is in storage
+          if (freshUser) setUser(freshUser);
         }
       } catch (error) { console.error("Polling error:", error); }
-    }, 30000); 
+    }, 30000);
 
     return () => clearInterval(intervalId);
   }, [navigate]);
@@ -114,7 +109,7 @@ const Dashboard = () => {
     { id: 5, icon: "🙋‍♂️", title: "Profile", subtitle: "Your Info", desc: "View and update your personal information and stats.", className: "feature-cyan", route: "/profile" },
     { id: 6, icon: "⭐", title: "Feedback & Ratings", subtitle: "Share Views", desc: "Share your thoughts and rate your experience with Sporture.", className: "feature-pink", route: "/feedback" },
   ];
-  
+
   const eventsToShow = showAllEvents ? events : events.slice(0, 3);
   const venuesToShow = showAllVenues ? popularVenues : popularVenues.slice(0, 3);
   const eventColors = ['event-green', 'event-orange', 'event-blue'];
@@ -207,9 +202,7 @@ const Dashboard = () => {
               <div className="stat-trend">Based on community feedback</div>
             </div>
           </div>
-          
-          {/* ======================= THE FIX ======================= */}
-          {/* The redundant 'Events Joined' card is replaced with 'Skill Level'. */}
+
           <div className="stat-card stat-orange">
             <div className="stat-icon">🚀</div>
             <div className="stat-content">
@@ -218,7 +211,6 @@ const Dashboard = () => {
               <div className="stat-trend">Level up!</div>
             </div>
           </div>
-          {/* ===================== END OF FIX ====================== */}
 
         </div>
         <section className="features-section">

@@ -1,5 +1,3 @@
-// server.ts — process entry point: connect to MongoDB, then start listening.
-// The app itself is built in app.ts so tests can use it without a live server.
 import { config } from "./config/env.js";
 import connectDB from "./config/db.js";
 import { createApp } from "./app.js";
@@ -20,7 +18,6 @@ const shutdown = (signal: string): void => {
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
-// Don't leave the process running in an undefined state.
 process.on("unhandledRejection", (err) => {
   console.error("Unhandled rejection, shutting down:", err);
   server.close(() => process.exit(1));

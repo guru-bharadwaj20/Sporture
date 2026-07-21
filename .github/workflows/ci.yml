@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-# A new push to the same branch makes the previous run irrelevant.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -17,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: Sporture/Server
+        working-directory: Server
 
     steps:
       - uses: actions/checkout@v4
@@ -26,18 +25,14 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: Sporture/Server/package-lock.json
+          cache-dependency-path: Server/package-lock.json
 
       - run: npm ci
 
-      # Covers source, scripts and tests — tsconfig.build.json narrows to
-      # source only for the emit step.
       - run: npm run typecheck
 
       - run: npm run build
 
-      # mongodb-memory-server downloads a mongod binary on first use; caching it
-      # keeps subsequent runs from re-fetching ~70MB.
       - name: Cache mongodb-memory-server binary
         uses: actions/cache@v4
         with:
@@ -51,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: Sporture/Client
+        working-directory: Client
 
     steps:
       - uses: actions/checkout@v4
@@ -60,7 +55,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: Sporture/Client/package-lock.json
+          cache-dependency-path: Client/package-lock.json
 
       - run: npm ci
       - run: npm run typecheck

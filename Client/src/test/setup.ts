@@ -2,7 +2,6 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
 
-// Unmount between tests so a leftover tree can't satisfy the next assertion.
 afterEach(() => {
   cleanup();
   localStorage.clear();
@@ -14,8 +13,6 @@ beforeEach(() => {
   localStorage.clear();
 });
 
-// jsdom implements neither of these, and Leaflet + the map components call
-// them on mount. Stubbing here keeps every test file from repeating it.
 if (!window.matchMedia) {
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
     matches: false,

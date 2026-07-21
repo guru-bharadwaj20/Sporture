@@ -48,11 +48,9 @@ describe("Register", () => {
   });
 
   it("enforces the same password length as the server", async () => {
-    // The server requires 8; a lower client bar just produces a 400 the user
-    // could have been told about instantly.
     const user = userEvent.setup();
     renderRegister();
-    await fill(user, { password: "Short12" }); // 7 characters
+    await fill(user, { password: "Short12" });
     await user.click(screen.getByRole("checkbox", { name: /football/i }));
     await user.click(screen.getByRole("button", { name: /register|create account|sign up/i }));
 
@@ -91,7 +89,6 @@ describe("Register", () => {
   });
 
   it("never sends the confirmation field", async () => {
-    // It is a client-side check only; the server has no such field.
     const user = userEvent.setup();
     renderRegister();
     await fill(user);

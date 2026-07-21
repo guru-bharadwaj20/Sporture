@@ -1,21 +1,17 @@
-# Dependencies
 node_modules/
 .pnp
 .pnp.js
 
-# Environment / secrets
 .env
 Server/.env
 .env.*
 !.env.example
 
-# Build output
 dist/
 dist-ssr/
 build/
 *.local
 
-# Logs
 logs/
 *.log
 npm-debug.log*
@@ -23,15 +19,12 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# User-generated uploads
 Sporture/Server/uploads/*
 !Sporture/Server/uploads/.gitkeep
 
-# Coverage
 coverage/
 .nyc_output/
 
-# Editors / OS
 .vscode/*
 !.vscode/extensions.json
 .idea/

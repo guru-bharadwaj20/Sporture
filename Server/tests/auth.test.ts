@@ -28,7 +28,7 @@ describe("POST /api/auth/register", () => {
 
     const stored = (await User.findOne({ email: valid.email }).select("+password"))!;
     expect(stored.password).not.toBe(valid.password);
-    expect(stored.password).toMatch(/^\$2[aby]\$/); // bcrypt marker
+    expect(stored.password).toMatch(/^\$2[aby]\$/);
     expect(await bcrypt.compare(valid.password, stored.password)).toBe(true);
   });
 
@@ -102,8 +102,6 @@ describe("POST /api/auth/login", () => {
       .post("/api/auth/login")
       .send({ email: "ghost@nowhere.com", password: "wrong-password" });
 
-    // Identical status and message, or the endpoint becomes a user-enumeration
-    // oracle for credential-stuffing lists.
     expect(noSuchUser.status).toBe(wrongPassword.status);
     expect(noSuchUser.body.message).toBe(wrongPassword.body.message);
   });

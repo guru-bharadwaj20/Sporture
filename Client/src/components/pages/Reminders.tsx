@@ -1,4 +1,3 @@
-// Client/src/components/pages/Reminders.jsx
 import { useState, useEffect } from 'react';
 import type { EventDTO } from "@shared/api";
 import { getJoinedEvents } from '../utils/api';
@@ -15,9 +14,7 @@ const Reminders = () => {
             try {
                 const res = await getJoinedEvents();
                 const now = new Date();
-                // Filter for events that are in the future
                 const upcoming = res.data.filter(event => new Date(event.date) >= now);
-                // Sort by the soonest event first
                 upcoming.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
                 setUpcomingEvents(upcoming);
             } catch (err) {
@@ -35,16 +32,12 @@ const Reminders = () => {
         const now = new Date();
         const eventTime = new Date(eventDate);
 
-        // Round to the nearest minute before decomposing. Flooring the raw
-        // millisecond gap reports an event exactly three days out as "in 2
-        // days", because it is really 2 days 23:59:59.9 away. Countdowns are
-        // not meaningful below a minute, so this loses nothing.
         const totalMinutes = Math.round((eventTime.getTime() - now.getTime()) / 60000);
 
         const diffInDays = Math.floor(totalMinutes / (60 * 24));
         const diffInHours = Math.floor((totalMinutes % (60 * 24)) / 60);
         const diffInMinutes = totalMinutes % 60;
-        
+
         if (diffInDays > 0) return `in ${diffInDays} day${diffInDays > 1 ? 's' : ''}`;
         if (diffInHours > 0) return `in ${diffInHours} hour${diffInHours > 1 ? 's' : ''}`;
         if (diffInMinutes > 0) return `in ${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''}`;

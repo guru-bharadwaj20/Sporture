@@ -6,23 +6,12 @@ import { setStoredUser, setToken } from "../components/utils/storage";
 import type { UserDTO } from "@shared/api";
 
 interface Options {
-  /** Initial URL. Use when the page reads a route param. */
   route?: string;
-  /** Route pattern the page is mounted at, e.g. "/events/:id". */
   path?: string;
-  /** Signs a user in before rendering. */
   user?: UserDTO | null;
-  /** Extra routes so navigation away from the page is observable. */
   extraRoutes?: Array<{ path: string; element: ReactElement }>;
 }
 
-/**
- * Renders a page with the providers it expects at runtime.
- *
- * Pages call useToast and useNavigate, so rendering one bare throws before any
- * assertion runs. Signing the user in here rather than in each test keeps the
- * arrange step to one line.
- */
 export const renderPage = (
   ui: ReactElement,
   { route = "/", path = "*", user = null, extraRoutes = [] }: Options = {}
@@ -46,6 +35,5 @@ export const renderPage = (
   );
 };
 
-/** Marker elements for asserting that a page navigated somewhere. */
 export const landmark = (name: string): ReactElement => <p>{`__${name}__`}</p>;
 export const landmarkText = (name: string): string => `__${name}__`;

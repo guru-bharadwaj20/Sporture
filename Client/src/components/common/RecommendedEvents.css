@@ -73,8 +73,6 @@
   gap: 20px;
 }
 
-/* ---------------- Card ---------------- */
-
 .rec-card {
   position: relative;
   display: flex;
@@ -99,8 +97,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  /* Leave room for the absolutely-positioned distance badge, which would
-     otherwise sit on top of a long title. */
+
   padding-right: 92px;
 }
 
@@ -130,8 +127,6 @@
   color: #64748b;
 }
 
-/* ---------------- Match strength ---------------- */
-
 .rec-card__match {
   display: flex;
   align-items: center;
@@ -160,8 +155,6 @@
   color: #4338ca;
 }
 
-/* ---------------- Reasons ---------------- */
-
 .rec-card__reasons {
   margin: 0;
   padding: 0;
@@ -186,8 +179,6 @@
   color: #059669;
   font-weight: 800;
 }
-
-/* ---------------- Footer ---------------- */
 
 .rec-card__foot {
   display: flex;

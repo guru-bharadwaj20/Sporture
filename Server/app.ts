@@ -1,5 +1,3 @@
-// app.ts — builds the Express app. Deliberately free of side effects (no DB
-// connection, no listen) so tests can import it and drive it with supertest.
 import express, { type Express } from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -21,17 +19,13 @@ const __dirname = path.dirname(__filename);
 export const createApp = (): Express => {
   const app = express();
 
-  // Trust the first proxy hop so rate limiting keys off the real client IP
-  // when deployed behind a load balancer.
   app.set("trust proxy", 1);
 
   app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 
-  // Explicit origin allowlist rather than a wide-open cors().
   app.use(
     cors({
       origin: (origin, cb) => {
-        // No Origin header (curl, same-origin, health checks) is allowed.
         if (!origin || config.clientOrigins.includes(origin)) return cb(null, true);
         cb(new Error(`Origin not allowed by CORS: ${origin}`));
       },
@@ -48,8 +42,6 @@ export const createApp = (): Express => {
     res.json({ status: "ok", uptime: process.uptime(), env: config.nodeEnv });
   });
 
-  // Rate limiting is counterproductive in tests, which fire many requests
-  // from one address on purpose.
   if (config.nodeEnv !== "test") {
     app.use("/api", apiLimiter);
   }
@@ -63,7 +55,6 @@ export const createApp = (): Express => {
     res.send("Sporture API running");
   });
 
-  // Must come after every route.
   app.use(notFound);
   app.use(errorHandler);
 

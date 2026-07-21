@@ -1,10 +1,9 @@
-// src/components/pages/CreateEvent.jsx
 import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { apiErrorMessage } from "../utils/errors";
 import { useToast } from "../common/toastContext";
 import type { Coords } from "@shared/api";
 import { useNavigate } from 'react-router-dom';
-import { createEvent } from "../utils/api"; // ✅ token-aware axios instance
+import { createEvent } from "../utils/api";
 import { useGeolocation } from "../utils/useGeolocation";
 import VenuePicker from "../common/VenuePicker";
 import './CreateEvent.css';
@@ -19,7 +18,6 @@ const CreateEvent = () => {
   });
   const [submitting, setSubmitting] = useState(false);
   const [showMap, setShowMap] = useState(false);
-  // A pin dropped on the map. When set it overrides geocoding the address.
   const [pin, setPin] = useState<Coords | null>(null);
 
   const navigate = useNavigate();
@@ -27,7 +25,6 @@ const CreateEvent = () => {
   const { coords, status: geoStatus, error: geoError, request: requestLocation } =
     useGeolocation();
 
-  // "Use my current location" seeds the pin, which the user can then drag.
   useEffect(() => {
     if (coords) {
       setPin(coords);
@@ -48,19 +45,15 @@ const CreateEvent = () => {
         sport: formData.sport,
         date: formData.date,
         maxPlayers: formData.maxPlayers,
-        // A dropped pin is more precise than geocoding the address, which
-        // resolves to a building or street centroid. Falls back to the text.
         location: pin
           ? { address: formData.location, lat: pin.lat, lng: pin.lng }
           : formData.location,
       };
 
-      const res = await createEvent(eventData); // ✅ token auto-attached
+      const res = await createEvent(eventData);
       navigate(`/events/${res.data._id}`);
     } catch (err) {
       console.error('Event creation error:', apiErrorMessage(err));
-            // Validation failures carry a details array; surface it rather than the
-      // generic message, so the user knows which field to fix.
       toast.error(apiErrorMessage(err, 'Event creation failed'));
     } finally {
       setSubmitting(false);

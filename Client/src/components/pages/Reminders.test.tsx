@@ -33,7 +33,6 @@ describe("Reminders", () => {
   });
 
   it("hides events that have already happened", async () => {
-    // A reminder for a past event is noise.
     mockJoined([
       makeEvent({ title: "Already played", date: inDays(-3) }),
       makeEvent({ title: "Coming up", date: inDays(3) }),
@@ -74,7 +73,6 @@ describe("Reminders", () => {
   });
 
   it("uses the singular for one day", async () => {
-    // "in 1 days" is the kind of detail that reads as unfinished.
     const inOneDay = new Date(Date.now() + 25 * 3600_000).toISOString();
     mockJoined([makeEvent({ date: inOneDay })]);
     renderReminders();

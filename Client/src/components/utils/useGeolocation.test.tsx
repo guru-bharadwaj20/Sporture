@@ -9,7 +9,6 @@ describe("formatDistance", () => {
   });
 
   it("rounds sub-kilometre distances to the nearest 50 m", () => {
-    // False precision: geocoding isn't accurate to the metre, so don't imply it.
     expect(formatDistance(120)).toBe("100 m away");
     expect(formatDistance(139)).toBe("150 m away");
     expect(formatDistance(980)).toBe("1000 m away");
@@ -44,8 +43,6 @@ describe("useGeolocation", () => {
   });
 
   it("starts idle and does not request on mount", () => {
-    // Prompting for location before the user asks is hostile, and a reliable
-    // way to get permanently denied.
     const getCurrentPosition = vi.fn();
     mockGeolocation({ getCurrentPosition });
 

@@ -1,4 +1,3 @@
-// src/components/pages/Profile.jsx
 import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
 import type { EventDTO, SkillLevel, UserDTO } from "@shared/api";
 import { getCurrentUser, updateUserById, getJoinedEvents, uploadUserPhoto } from "../utils/api";
@@ -14,7 +13,6 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState("upcoming");
   const [loading, setLoading] = useState(true);
 
-  // State for user's events
   const [upcomingEvents, setUpcomingEvents] = useState<EventDTO[]>([]);
   const [pastEvents, setPastEvents] = useState<EventDTO[]>([]);
 
@@ -25,12 +23,11 @@ const Profile = () => {
         const userRes = await getCurrentUser();
         setUser(userRes.data.user);
 
-        // Fetch the user's joined and hosted events
         const eventRes = await getJoinedEvents();
         const now = new Date();
         const upcoming: EventDTO[] = [];
         const past: EventDTO[] = [];
-        
+
         eventRes.data.forEach(event => {
           if (new Date(event.date) >= now) {
             upcoming.push(event);
@@ -41,7 +38,6 @@ const Profile = () => {
 
         setUpcomingEvents(upcoming);
         setPastEvents(past);
-
       } catch (err) {
         console.error("Error fetching user data:", err);
       } finally {
@@ -51,13 +47,11 @@ const Profile = () => {
     fetchUserData();
   }, []);
 
-  // Background theme effect
   useEffect(() => {
     document.body.classList.add("profile-theme");
     return () => document.body.classList.remove("profile-theme");
   }, []);
 
-  // Optional: live city fetch via geolocation (updates city field locally)
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -80,8 +74,6 @@ const Profile = () => {
   if (!file || !user) return;
 
   try {
-    // Goes through the shared api client so the auth token is attached; the
-    // upload route now requires it.
     const { data } = await uploadUserPhoto(user._id, file);
 
     if (data.user) {
@@ -99,8 +91,6 @@ const Profile = () => {
     e.preventDefault();
     if (!user) return;
     try {
-      // Send only the fields a user is allowed to edit. Anything else (rating,
-      // email, stats) is rejected server-side anyway.
       const res = await updateUserById(user._id, {
         name: user.name,
         favSports: user.favSports,
@@ -128,7 +118,6 @@ const Profile = () => {
   return (
     <div className="profile-bg">
       <div className="profile-layout">
-        {/* Header */}
         <header className="profile-header">
           <div className="profile-photo-box">
             <img src={user.photoURL || 'https://via.placeholder.com/150'} alt="profile" className="profile-photo" />
@@ -179,7 +168,6 @@ const Profile = () => {
           </div>
         </header>
 
-        {/* Stats */}
         <section className="stats-grid">
           <div className="stat">
             <h2>{user.gamesPlayed}</h2>
@@ -207,7 +195,6 @@ const Profile = () => {
           </div>
         </section>
 
-        {/* Favorite Sports */}
         <div className="sports-list">
           {Array.isArray(user.favSports) && user.favSports.map((s, i) => (
             <span key={i} className="sport-chip">
@@ -216,7 +203,6 @@ const Profile = () => {
           ))}
         </div>
 
-        {/* Tabs - Now with dynamic data */}
         <section className="tabs-section">
           <div className="tab-buttons">
             <button

@@ -1,4 +1,3 @@
-// src/components/pages/EventDiscovery.jsx
 import { useState, useEffect } from "react";
 import type { EventDTO, EventSearchParams } from "@shared/api";
 import { Link, useNavigate } from "react-router-dom";
@@ -34,7 +33,6 @@ const EventDiscovery = () => {
   const { coords, status: geoStatus, error: geoError, request: requestLocation, clear: clearLocation } =
     useGeolocation();
 
-  // ✅ Check authentication on mount
   useEffect(() => {
     const token = getToken();
     const user = getStoredUser();
@@ -70,8 +68,6 @@ const EventDiscovery = () => {
       try {
         const params: EventSearchParams = {};
         if (sportFilter !== "All") params.sport = sportFilter;
-        // Sending coordinates switches the API to proximity search: results
-        // come back nearest-first with a distanceMetres field.
         if (coords) {
           params.lat = coords.lat;
           params.lng = coords.lng;
@@ -91,8 +87,6 @@ const EventDiscovery = () => {
   }, [sportFilter, coords, radius]);
 
   const handleJoin = async (eventId: string) => {
-    // Checked before the request so an unauthenticated click is a prompt to
-    // log in rather than a 401 round-trip.
     const token = getToken();
 
     if (!token || !isAuthenticated) {
@@ -109,21 +103,19 @@ const EventDiscovery = () => {
         prev.map((e) => (e._id === eventId ? res.data.event : e))
       );
     } catch (err) {
-      // If unauthorized, clear storage and redirect
       if (isUnauthorised(err)) {
         clearSession();
         toast.error("Your session expired. Please log in again.");
         navigate("/login");
         return;
       }
-      
+
       const msg = apiErrorMessage(err, "Failed to join event.");
       toast.error(msg);
     } finally {
       setJoining((prev) => ({ ...prev, [eventId]: false }));
     }
   };
-
 
   if (loading) {
     return (
@@ -282,8 +274,8 @@ const EventDiscovery = () => {
                     <span className="spots-filled">{spotsFilled} / {event.maxPlayers}</span>
                   </div>
                   <div className="progress-bar-container">
-                    <div 
-                      className="progress-bar-fill" 
+                    <div
+                      className="progress-bar-fill"
                       style={{ width: `${progressPercentage}%` }}
                     ></div>
                   </div>
@@ -298,14 +290,14 @@ const EventDiscovery = () => {
                     disabled={joining[event._id] || isFull || hasJoined}
                     className="join-btn"
                   >
-                    {!isAuthenticated 
-                      ? "Login to Join" 
-                      : isFull 
-                        ? "Event Full" 
-                        : hasJoined 
-                          ? "Already Joined" 
-                          : joining[event._id] 
-                            ? "Joining..." 
+                    {!isAuthenticated
+                      ? "Login to Join"
+                      : isFull
+                        ? "Event Full"
+                        : hasJoined
+                          ? "Already Joined"
+                          : joining[event._id]
+                            ? "Joining..."
                             : "Join Event"}
                   </button>
                 </div>

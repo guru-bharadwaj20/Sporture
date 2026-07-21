@@ -1,4 +1,3 @@
-// src/pages/Register.jsx
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import type { SkillLevel } from "@shared/api";
@@ -50,13 +49,10 @@ const Register = () => {
     e.preventDefault();
     setError("");
 
-    // Basic validations
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       return;
     }
-    // Must match the server's registerSchema (min 8). A lower bar here lets
-    // a 6-character password through the form only to be rejected by the API.
     if (formData.password.length < 8) {
       setError("Password must be at least 8 characters");
       return;
@@ -79,12 +75,11 @@ const Register = () => {
       const response = await registerUser(payload);
 
       if (response.data && response.data.success) {
-        // Success animation
         const submitBtn = document.querySelector('.btn-submit');
         if (submitBtn) submitBtn.classList.add('success-state');
 
         toast.success("Account created. Please log in to continue.");
-        
+
         setTimeout(() => {
           navigate("/login");
         }, 500);

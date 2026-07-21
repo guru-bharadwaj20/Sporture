@@ -1,4 +1,3 @@
-// Client/src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./components/pages/LandingPage";
 import Login from "./components/pages/Login";
@@ -16,61 +15,56 @@ import { ToastProvider } from "./components/common/ToastProvider";
 
 function App() {
   return (
-    // ErrorBoundary is outermost so a crash anywhere below still renders a
-    // recoverable page rather than a blank document.
     <ErrorBoundary>
       <ToastProvider>
         <Router>
           <Routes>
-        {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        
-        {/* Anyone can view events */}
+
         <Route path="/events" element={<EventDiscovery />} />
         <Route path="/events/:id" element={<EventDetails />} />
-        
-        {/* Protected Routes - Require Authentication */}
-        <Route 
-          path="/dashboard" 
+
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/profile" 
+        <Route
+          path="/profile"
           element={
             <ProtectedRoute>
               <Profile />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/feedback" 
+        <Route
+          path="/feedback"
           element={
             <ProtectedRoute>
               <Feedback />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/create-event" 
+        <Route
+          path="/create-event"
           element={
             <ProtectedRoute>
               <CreateEvent />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/reminders" 
+        <Route
+          path="/reminders"
           element={
             <ProtectedRoute>
               <Reminders />
             </ProtectedRoute>
-          } 
+          }
         />
           </Routes>
         </Router>

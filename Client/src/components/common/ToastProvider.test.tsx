@@ -42,7 +42,6 @@ describe("ToastProvider", () => {
   });
 
   it("stacks multiple toasts rather than replacing", async () => {
-    // alert() could only ever show one message, and blocked until dismissed.
     const user = userEvent.setup();
     renderWithProvider();
 
@@ -62,7 +61,6 @@ describe("ToastProvider", () => {
 
     const region = screen.getByRole("status");
     expect(region).toHaveAttribute("aria-live", "polite");
-    // Focus must stay where the user put it.
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "success" }));
   });
 
@@ -77,8 +75,6 @@ describe("ToastProvider", () => {
   });
 
   it("auto-dismisses a success toast", () => {
-    // fireEvent, not userEvent: userEvent awaits real time between steps and
-    // deadlocks against fake timers.
     vi.useFakeTimers();
     renderWithProvider();
 
@@ -92,7 +88,6 @@ describe("ToastProvider", () => {
   });
 
   it("keeps errors on screen longer than successes", () => {
-    // Errors usually carry something the user has to act on.
     vi.useFakeTimers();
     renderWithProvider();
 
@@ -112,7 +107,6 @@ describe("ToastProvider", () => {
   });
 
   it("preserves line breaks in multi-line validation messages", async () => {
-    // Several field errors arrive newline-separated; alert() flattened them.
     const user = userEvent.setup();
     renderWithProvider();
 
@@ -121,7 +115,6 @@ describe("ToastProvider", () => {
 
     expect(message.textContent).toContain("line one");
     expect(message.textContent).toContain("line two");
-    // The newline must survive into the DOM; CSS turns it into a line break.
     expect(message.textContent).toBe(`line one\nline two`);
   });
 
@@ -136,7 +129,6 @@ describe("ToastProvider", () => {
 
 describe("useToast", () => {
   it("throws outside a provider", () => {
-    // A silent no-op would swallow user-facing messages with no clue why.
     vi.spyOn(console, "error").mockImplementation(() => {});
     expect(() => render(<Trigger />)).toThrow(/must be used within a ToastProvider/i);
     vi.restoreAllMocks();

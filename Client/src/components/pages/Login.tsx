@@ -1,4 +1,3 @@
-// src/components/pages/Login.jsx
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginUser, getCurrentUser } from "../utils/api";
@@ -33,23 +32,18 @@ const Login = () => {
     try {
       const response = await loginUser(formData);
 
-      // Expecting { success, token, user } from backend
       if (response.data.success) {
-        // Save token
         setToken(response.data.token);
 
-        // Fetch authoritative user from server using token
         try {
           const meRes = await getCurrentUser();
           const serverUser = meRes.data.user;
           setStoredUser(serverUser);
         } catch (meErr) {
-          // fallback to login response if /me fails
           console.warn("Could not fetch /auth/me, using login response", meErr);
           setStoredUser(response.data.user);
         }
 
-        // Success animation
         const submitBtn = document.querySelector('.btn-submit');
         if (submitBtn) submitBtn.classList.add('success-state');
 

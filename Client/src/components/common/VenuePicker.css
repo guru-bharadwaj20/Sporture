@@ -17,7 +17,7 @@
   bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 500; /* above tiles, below Leaflet controls */
+  z-index: 500;
   margin: 0;
   padding: 7px 16px;
   background: rgba(255, 255, 255, 0.95);

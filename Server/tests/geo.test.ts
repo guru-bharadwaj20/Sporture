@@ -13,7 +13,6 @@ describe("event location storage", () => {
     expect(res.status).toBe(201);
     expect(res.body.location.address).toBe(BENGALURU.address);
     expect(res.body.location.geo.type).toBe("Point");
-    // MongoDB stores longitude first — the reverse of how they're usually said.
     expect(res.body.location.geo.coordinates).toEqual([BENGALURU.lng, BENGALURU.lat]);
   });
 
@@ -80,8 +79,6 @@ describe("GET /api/events — proximity search", () => {
     const res = await near({ lat: BENGALURU.lat, lng: BENGALURU.lng, radius: 100000 });
     const found = res.body.find((e: any) => e.title === "5km away");
 
-    // Spherical geometry over ~5km; allow for the flat-earth approximation
-    // used to build the fixture.
     expect(found.distanceMetres).toBeGreaterThan(4800);
     expect(found.distanceMetres).toBeLessThan(5200);
   });
@@ -93,7 +90,7 @@ describe("GET /api/events — proximity search", () => {
     const res = await near({ lat: BENGALURU.lat, lng: BENGALURU.lng });
     const titles = res.body.map((e: any) => e.title);
 
-    expect(titles).toContain("20km away"); // inside the 25km default
+    expect(titles).toContain("20km away");
     expect(titles).not.toContain("80km away");
   });
 
@@ -241,7 +238,7 @@ describe("geocoding on event creation", () => {
 
     const { token } = await makeUser();
     await makeEvent(token, { location: "Cached Venue, Bengaluru" });
-    await makeEvent(token, { location: "cached venue, bengaluru" }); // different case
+    await makeEvent(token, { location: "cached venue, bengaluru" });
 
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });

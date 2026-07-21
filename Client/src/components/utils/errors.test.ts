@@ -3,7 +3,6 @@ import { AxiosError, AxiosHeaders } from "axios";
 import type { ApiErrorResponse } from "@shared/api";
 import { apiErrorMessage, isUnauthorised } from "./errors";
 
-/** Builds an AxiosError carrying the API's error body. */
 const axiosError = (status: number, data: ApiErrorResponse): AxiosError => {
   const err = new AxiosError("Request failed");
   err.response = {
@@ -18,7 +17,6 @@ const axiosError = (status: number, data: ApiErrorResponse): AxiosError => {
 
 describe("apiErrorMessage", () => {
   it("prefers validation details over the generic message", () => {
-    // "Validation failed" tells the user nothing; the per-field lines do.
     const err = axiosError(400, {
       success: false,
       message: "Validation failed",

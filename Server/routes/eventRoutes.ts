@@ -22,11 +22,6 @@ import { rankEvents, type ScorableEvent } from "../services/recommendations.js";
 
 const router = express.Router();
 
-/**
- * Turns validated location input into the stored shape. Coordinates supplied by
- * the client are trusted (they come from a map picker or the browser's
- * geolocation API and are more precise); a bare address is geocoded.
- */
 const resolveLocation = async (input: LocationInput): Promise<EventLocation> => {
   if (typeof input === "string") {
     const { lat, lng } = await geocodeAddress(input);
@@ -44,20 +39,14 @@ const resolveLocation = async (input: LocationInput): Promise<EventLocation> => 
   return { address: input.address, geo: { type: "Point", coordinates: [lng, lat] } };
 };
 
-/** Escapes regex metacharacters so user input is matched literally. */
 const escapeRegex = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-// Applied when a search supplies a centre point but no explicit radius.
 const DEFAULT_RADIUS_METRES = 25_000;
 
-// Recommendations search wider than discovery — a strong match slightly
-// further out is still worth surfacing.
 const RECOMMEND_RADIUS_METRES = 50_000;
 
-// Upper bound on events pulled into memory for scoring.
 const CANDIDATE_CAP = 300;
 
-/** Joins host and player names onto aggregation results. */
 const populateStages = (hostFields: Record<string, 1>): PipelineStage[] => [
   {
     $lookup: {
@@ -80,7 +69,6 @@ const populateStages = (hostFields: Record<string, 1>): PipelineStage[] => [
   },
 ];
 
-/* -------------------------- CREATE EVENT -------------------------- */
 router.post("/", auth, validate(createEventSchema), async (req, res, next) => {
   try {
     const { title, sport, date, location, maxPlayers } = req.body as CreateEventInput;
@@ -102,22 +90,18 @@ router.post("/", auth, validate(createEventSchema), async (req, res, next) => {
   }
 });
 
-/* --------------------------- GET EVENTS --------------------------- */
 router.get("/", validate(eventQuerySchema, "query"), async (req, res, next) => {
   try {
     const { sport, lat, lng, radius, upcoming } = req.query as unknown as EventQuery;
 
     const filter: FilterQuery<IEvent> = {};
     if (sport) {
-      // Matched literally: unescaped, a value like ".*" would match every sport.
       filter.sport = { $regex: `^${escapeRegex(sport)}$`, $options: "i" };
     }
     if (upcoming) {
       filter.date = { $gte: new Date() };
     }
 
-    // Without a centre point there is nothing to measure distance from, so
-    // fall back to a plain chronological listing.
     if (lat === undefined || lng === undefined) {
       const events = await Event.find(filter)
         .populate("createdBy", "name")
@@ -127,9 +111,6 @@ router.get("/", validate(eventQuerySchema, "query"), async (req, res, next) => {
       return;
     }
 
-    // $geoNear must be the first stage in the pipeline and applies its own
-    // filter, which is why `filter` is passed to it rather than added as a
-    // separate $match. Results come back sorted nearest-first.
     const events = await Event.aggregate([
       {
         $geoNear: {
@@ -142,7 +123,6 @@ router.get("/", validate(eventQuerySchema, "query"), async (req, res, next) => {
       },
       { $limit: 200 },
       ...populateStages({ name: 1 }),
-      // Rounded because sub-metre precision is noise given geocoding accuracy.
       { $addFields: { distanceMetres: { $round: ["$distanceMetres", 0] } } },
     ]);
 
@@ -152,7 +132,6 @@ router.get("/", validate(eventQuerySchema, "query"), async (req, res, next) => {
   }
 });
 
-/* ----------------------- GET JOINED/HOSTED EVENTS ----------------------- */
 router.get("/joined", auth, async (req, res, next) => {
   try {
     const userId = req.user!._id;
@@ -168,15 +147,11 @@ router.get("/joined", auth, async (req, res, next) => {
   }
 });
 
-/* ---------------------------- JOIN EVENT ---------------------------- */
 router.post("/:id/join", auth, validate(idParamSchema, "params"), async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user!._id;
 
-    // Single atomic operation: the capacity and duplicate checks are part of
-    // the update's filter, so two simultaneous joins cannot both succeed on
-    // the final slot. A read-then-write would let the event exceed maxPlayers.
     const event = await Event.findOneAndUpdate(
       {
         _id: id,
@@ -191,7 +166,6 @@ router.post("/:id/join", auth, validate(idParamSchema, "params"), async (req, re
       .populate("createdBy", "name")
       .populate("currentPlayers", "name");
 
-    // The filter matched nothing — re-read to report *why* it failed.
     if (!event) {
       const existing = await Event.findById(id);
       if (!existing) throw new AppError("Event not found", 404);
@@ -219,17 +193,6 @@ router.post("/:id/join", auth, validate(idParamSchema, "params"), async (req, re
   }
 });
 
-/* -------------------------- RECOMMENDED EVENTS -------------------------- */
-/**
- * Personalised ranking. Must stay above the "/:id" route below, or Express
- * matches "recommended" as an event id.
- *
- * Candidates are narrowed in MongoDB (upcoming, joinable, not already the
- * user's) and then scored in application code. Scoring in TS rather than an
- * aggregation keeps the weighting readable and unit-testable; the trade-off is
- * that it needs the candidate set in memory, which is why it is capped. At a
- * scale where that cap bites, the scoring would move into the pipeline.
- */
 router.get(
   "/recommended",
   auth,
@@ -243,13 +206,11 @@ router.get(
 
       const baseFilter: FilterQuery<IEvent> = {
         date: { $gt: now },
-        createdBy: { $ne: userId },      // your own events aren't suggestions
-        currentPlayers: { $ne: userId }, // nor ones you're already in
-        $expr: { $lt: [{ $size: "$currentPlayers" }, "$maxPlayers"] }, // not full
+        createdBy: { $ne: userId },
+        currentPlayers: { $ne: userId },
+        $expr: { $lt: [{ $size: "$currentPlayers" }, "$maxPlayers"] },
       };
 
-      // People the user has already played alongside, used by the social
-      // signal. Their own id is removed so it never counts as a match.
       const history = await Event.find({ currentPlayers: userId })
         .select("currentPlayers")
         .limit(100)
@@ -263,7 +224,6 @@ router.get(
       let candidates: ScorableEvent[];
 
       if (lat !== undefined && lng !== undefined) {
-        // $geoNear attaches distanceMetres, which the proximity signal needs.
         candidates = await Event.aggregate([
           {
             $geoNear: {
@@ -278,8 +238,6 @@ router.get(
           ...populateStages({ name: 1, skillLevel: 1 }),
         ]);
       } else {
-        // Without a centre point, proximity scores neutral for every event and
-        // ranking falls back to the remaining signals.
         candidates = (await Event.find(baseFilter)
           .populate("createdBy", "name skillLevel")
           .populate("currentPlayers", "name")
@@ -301,11 +259,8 @@ router.get(
   }
 );
 
-/* --------------------------- GET SINGLE EVENT --------------------------- */
 router.get("/:id", validate(idParamSchema, "params"), async (req, res, next) => {
   try {
-    // Emails are not exposed here — this route is public, and the participant
-    // list of an event should not leak contact details.
     const event = await Event.findById(req.params.id)
       .populate("createdBy", "name")
       .populate("currentPlayers", "name");

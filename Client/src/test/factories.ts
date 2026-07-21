@@ -6,18 +6,9 @@ import type {
   UserRefDTO,
 } from "@shared/api";
 
-/**
- * Fixture builders for page tests.
- *
- * Each returns a complete, valid object so a test only states the fields it
- * actually cares about. That keeps the assertion visible: if a test overrides
- * `sport`, sport is what it is testing.
- */
-
 let seq = 0;
 const nextId = () => `id-${(seq += 1).toString().padStart(6, "0")}`;
 
-/** ISO string `days` from now — matches how the API serialises dates. */
 export const inDays = (days: number): string =>
   new Date(Date.now() + days * 86_400_000).toISOString();
 
@@ -88,7 +79,6 @@ export const makeFeedback = (over: Partial<FeedbackDTO> = {}): FeedbackDTO =>
     ...over,
   }) as FeedbackDTO;
 
-/** Fills an event to capacity, so join controls should read as full. */
 export const makeFullEvent = (over: Partial<EventDTO> = {}): EventDTO => {
   const maxPlayers = over.maxPlayers ?? 4;
   return makeEvent({

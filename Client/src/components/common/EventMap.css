@@ -9,7 +9,6 @@
   animation: fadeInUp 0.6s ease backwards;
 }
 
-/* Leaflet measures its container, so this must be a real height. */
 .event-map__canvas {
   width: 100%;
   height: 100%;
@@ -20,7 +19,7 @@
   bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 500; /* above tiles, below Leaflet's controls at 1000 */
+  z-index: 500;
   margin: 0;
   padding: 10px 22px;
   background: rgba(255, 255, 255, 0.96);
@@ -30,8 +29,6 @@
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
 }
 
-/* ---------------- Markers ---------------- */
-
 .map-pin {
   display: flex;
   align-items: center;
@@ -40,7 +37,7 @@
   height: 40px;
   background: linear-gradient(135deg, #667eea, #764ba2);
   border: 3px solid white;
-  /* Teardrop: round except the bottom-left, then rotated so the point is down. */
+
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
@@ -53,7 +50,7 @@
 }
 
 .map-pin__glyph {
-  transform: rotate(45deg); /* cancel the parent rotation */
+  transform: rotate(45deg);
   font-size: 19px;
   line-height: 1;
 }
@@ -62,7 +59,6 @@
   background: linear-gradient(135deg, #f59e0b, #ef4444);
 }
 
-/* Current position: a point, not a place, so no teardrop. */
 .map-you {
   position: relative;
   width: 22px;
@@ -90,8 +86,6 @@
   .map-you__pulse { animation: none; }
   .event-map { animation: none; }
 }
-
-/* ---------------- Popup ---------------- */
 
 .map-popup {
   min-width: 190px;
@@ -134,7 +128,6 @@
   text-decoration: underline;
 }
 
-/* Soften Leaflet's default popup chrome to match the rest of the app. */
 .leaflet-popup-content-wrapper {
   border-radius: 14px;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);

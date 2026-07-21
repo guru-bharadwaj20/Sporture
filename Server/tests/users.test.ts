@@ -82,8 +82,6 @@ describe("PUT /api/users/:id", () => {
   });
 
   describe("mass assignment", () => {
-    // Every field here is either derived, privileged, or set elsewhere.
-    // A client must not be able to write any of them.
     const forbidden = [
       ["rating", 5, 0],
       ["gamesPlayed", 9999, 0],

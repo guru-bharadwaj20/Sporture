@@ -5,7 +5,7 @@ import type { Coords } from "@shared/api";
 import { eventIcon } from "../utils/mapIcons";
 import "./VenuePicker.css";
 
-const DEFAULT_CENTRE: [number, number] = [12.9716, 77.5946]; // Bengaluru
+const DEFAULT_CENTRE: [number, number] = [12.9716, 77.5946];
 
 type PickHandler = (coords: Coords) => void;
 
@@ -16,7 +16,6 @@ const ClickToPlace = ({ onPick }: { onPick: PickHandler }) => {
   return null;
 };
 
-/** Follows the pin when it's set from outside the map (e.g. "use my location"). */
 const Recentre = ({ position }: { position: Coords | null }) => {
   const map = useMap();
   useEffect(() => {
@@ -28,7 +27,6 @@ const Recentre = ({ position }: { position: Coords | null }) => {
 const InvalidateOnMount = () => {
   const map = useMap();
   useEffect(() => {
-    // The picker is collapsed by default; without this it renders grey when opened.
     const t = setTimeout(() => map.invalidateSize(), 0);
     return () => clearTimeout(t);
   }, [map]);
@@ -42,11 +40,6 @@ interface VenuePickerProps {
   height?: number;
 }
 
-/**
- * Lets a host drop a pin on the exact venue. More precise than geocoding a
- * text address, which resolves to a street or building centroid and can be a
- * few hundred metres off for a pitch inside a park.
- */
 const VenuePicker = ({ position, sport, onPick, height = 300 }: VenuePickerProps) => (
   <div className="venue-picker" style={{ height }}>
     <MapContainer

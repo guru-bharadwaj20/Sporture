@@ -37,8 +37,6 @@ describe("ProtectedRoute", () => {
   });
 
   it("treats an empty-string token as unauthenticated", () => {
-    // localStorage stores strings, so "" is a real possibility after a
-    // partially-failed login.
     localStorage.setItem("token", "");
     renderAt("/dashboard");
 

@@ -46,7 +46,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
       type: String,
       required: true,
       minlength: 6,
-      select: false, // never returned unless explicitly requested
+      select: false,
     },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     favSports: { type: [String], default: [] },
@@ -57,8 +57,6 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     photoURL: { type: String, default: "" },
     memberSince: {
       type: String,
-      // Must be a function — a bare value is evaluated once at module load,
-      // so every user created during a server's lifetime shared one timestamp.
       default: () =>
         new Date().toLocaleString("default", { month: "short", year: "numeric" }),
     },
@@ -68,7 +66,6 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
   { timestamps: true }
 );
 
-// Hash the password on create and on any change to it.
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, SALT_ROUNDS);

@@ -9,19 +9,8 @@ interface Toast {
 }
 
 const DEFAULT_TTL_MS = 4500;
-// Errors stay longer: they usually carry something the user has to act on.
 const ERROR_TTL_MS = 7000;
 
-/**
- * Replaces `alert()`.
- *
- * `alert` blocks the main thread, cannot be styled, cannot show more than one
- * message, and on a validation failure it flattens a multi-line list into an
- * unreadable dialog. Toasts are non-blocking and stack.
- *
- * The region is a live region so screen readers announce messages without
- * stealing focus — the accessible equivalent of what `alert` did by force.
- */
 export const ToastProvider = ({ children }: { children: ReactNode }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const nextId = useRef(0);
@@ -39,7 +28,6 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
     [dismiss]
   );
 
-  // Memoised so consumers don't re-render on every toast change.
   const api = useMemo<ToastApi>(
     () => ({
       success: (m: string) => push("success", m),

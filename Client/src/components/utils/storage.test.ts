@@ -25,8 +25,6 @@ describe("getStoredUser", () => {
   });
 
   it("returns null for malformed JSON instead of throwing", () => {
-    // This is the case that used to crash a fresh browser: the old code did
-    // JSON.parse(localStorage.getItem("user")) with no guard.
     localStorage.setItem("user", "not-valid-json{{{");
     expect(() => getStoredUser()).not.toThrow();
     expect(getStoredUser()).toBeNull();
@@ -38,7 +36,6 @@ describe("getStoredUser", () => {
   });
 
   it("rejects a stored value of the wrong shape", () => {
-    // A stale entry from an older version, or hand-edited devtools state.
     localStorage.setItem("user", JSON.stringify({ nope: true }));
     expect(getStoredUser()).toBeNull();
   });

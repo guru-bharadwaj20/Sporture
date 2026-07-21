@@ -18,7 +18,6 @@ const mockList = (items: FeedbackDTO[]) =>
 const renderFeedback = () =>
   renderPage(<Feedback />, { route: "/feedback", path: "/feedback", user: makeUser() });
 
-/** Stars are the only way to set a rating; they carry accessible names. */
 const rate = async (user: ReturnType<typeof userEvent.setup>, stars: number) =>
   user.click(screen.getByRole("button", { name: new RegExp(`rate ${stars} out of 5`, "i") }));
 
@@ -43,8 +42,6 @@ describe("Feedback", () => {
     });
 
     it("does not display author email addresses", async () => {
-      // The server strips email from the public listing, so any email markup
-      // here would render as a bare icon with nothing after it.
       mockList([makeFeedback({ name: "Ahana Sharma", comment: "Great app." })]);
       const { container } = renderFeedback();
 
@@ -58,7 +55,6 @@ describe("Feedback", () => {
       vi.spyOn(console, "error").mockImplementation(() => {});
       renderFeedback();
 
-      // The form must still be usable even if the list didn't load.
       expect(await screen.findByRole("button", { name: /submit feedback/i })).toBeInTheDocument();
       vi.restoreAllMocks();
     });
@@ -66,8 +62,6 @@ describe("Feedback", () => {
 
   describe("the form", () => {
     it("does not ask for a name or email", async () => {
-      // Identity comes from the token; collecting it here would let anyone
-      // post under someone else's name.
       renderFeedback();
       await waitFor(() => expect(api.getFeedback).toHaveBeenCalled());
 
@@ -169,7 +163,6 @@ describe("Feedback", () => {
   describe("rating stars", () => {
     it("exposes each star to assistive tech", () => {
       renderFeedback();
-      // Colour alone can't convey the rating.
       expect(screen.getByRole("button", { name: /rate 1 out of 5/i })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /rate 5 out of 5/i })).toBeInTheDocument();
     });

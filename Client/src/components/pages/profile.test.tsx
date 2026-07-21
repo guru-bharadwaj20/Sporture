@@ -27,7 +27,6 @@ describe("Profile", () => {
     vi.mocked(api.getCurrentUser).mockReset();
     vi.mocked(api.getJoinedEvents).mockReset();
     vi.mocked(api.updateUserById).mockReset();
-    // The page reads geolocation on mount to fill the city field.
     Object.defineProperty(navigator, "geolocation", {
       value: { getCurrentPosition: vi.fn() },
       configurable: true,
@@ -72,7 +71,6 @@ describe("Profile", () => {
     renderProfile(me);
 
     expect(await screen.findByText(/Coming up/)).toBeInTheDocument();
-    // The past event lives behind the other tab.
     expect(screen.queryByText(/Already played/)).not.toBeInTheDocument();
   });
 
@@ -90,8 +88,6 @@ describe("Profile", () => {
 
   describe("editing", () => {
     it("saves only the fields a user may change", async () => {
-      // rating, email and the counters are server-owned; sending them would
-      // be rejected anyway, so the client must not pretend otherwise.
       const me = makeUser();
       const user = userEvent.setup();
       setup(me);
@@ -132,7 +128,6 @@ describe("Profile", () => {
       await user.click(screen.getByRole("button", { name: /edit profile/i }));
       await user.click(screen.getByRole("button", { name: /save/i }));
 
-      // A stale cached name would reappear on the next page load.
       await waitFor(() => expect(getStoredUser()?.name).toBe("Radha R."));
     });
 

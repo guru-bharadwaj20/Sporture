@@ -10,8 +10,6 @@ import type { EventDTO } from "@shared/api";
 
 vi.mock("../utils/api");
 
-// The map is exercised in EventMap's own tests and needs a real DOM box to
-// measure; stubbing it keeps this file about discovery behaviour.
 vi.mock("../common/EventMap", () => ({
   default: ({ events }: { events: EventDTO[] }) => (
     <div data-testid="event-map">{events.length} pins</div>
@@ -56,7 +54,6 @@ describe("EventDiscovery", () => {
     });
 
     it("shows the venue address, not the raw location object", async () => {
-      // location is { address, geo }; rendering it directly throws in React.
       mockEvents([makeEvent()]);
       renderDiscovery();
       expect(await screen.findByText(/Community Ground, Bengaluru/)).toBeInTheDocument();
@@ -359,7 +356,6 @@ describe("EventDiscovery", () => {
       await user.click(screen.getByRole("button", { name: /join event/i }));
 
       expect(await screen.findByText(landmarkText("login"))).toBeInTheDocument();
-      // A stale token must not be left behind to fail the next request too.
       expect(getToken()).toBeNull();
       expect(getStoredUser()).toBeNull();
       vi.restoreAllMocks();

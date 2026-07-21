@@ -61,7 +61,6 @@ describe("RecommendedEvents", () => {
   });
 
   it("shows the score as a percentage, not a raw float", async () => {
-    // "0.742" means nothing to a user.
     mockResponse([makeEvent({ score: 0.742 })]);
     renderRecs();
 
@@ -70,7 +69,6 @@ describe("RecommendedEvents", () => {
   });
 
   it("explains why each event was recommended", async () => {
-    // An unexplained ranking is indistinguishable from an arbitrary one.
     mockResponse([makeEvent()]);
     renderRecs();
 

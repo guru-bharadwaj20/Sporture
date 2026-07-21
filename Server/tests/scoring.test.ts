@@ -12,8 +12,6 @@ import {
   type ScoringUser,
 } from "../services/recommendations.js";
 
-/* Pure functions, so these need no database and no server. */
-
 describe("sportAffinity", () => {
   it("scores a favourite sport highest", () => {
     expect(sportAffinity(["Football", "Cricket"], "Football")).toBe(1);
@@ -30,7 +28,6 @@ describe("sportAffinity", () => {
   });
 
   it("stays neutral when the user has no stated favourites", () => {
-    // Otherwise every event ranks equally low for a brand-new account.
     expect(sportAffinity([], "Tennis")).toBe(0.5);
     expect(sportAffinity(undefined, "Tennis")).toBe(0.5);
   });
@@ -55,7 +52,6 @@ describe("proximityScore", () => {
   });
 
   it("stays neutral when distance is unknown", () => {
-    // Happens when the user hasn't shared a location; must not penalise.
     expect(proximityScore(undefined)).toBe(0.5);
     expect(proximityScore(null)).toBe(0.5);
   });
@@ -136,7 +132,6 @@ describe("urgencyScore", () => {
   });
 
   it("prefers a partly-filled event over an empty one", () => {
-    // An empty event signals nobody is going.
     const empty = urgencyScore(0, 10, inDays(3), now);
     const twoThirds = urgencyScore(7, 10, inDays(3), now);
     expect(twoThirds).toBeGreaterThan(empty);
@@ -151,8 +146,6 @@ describe("urgencyScore", () => {
     }
   });
 });
-
-/* ------------------------- COMBINED SCORING ------------------------- */
 
 const now = new Date("2026-01-01T00:00:00Z");
 const inDays = (d: number) => new Date(now.getTime() + d * 86400000);
@@ -241,7 +234,6 @@ describe("scoreEvent", () => {
   });
 
   it("weights sport affinity above urgency", () => {
-    // Guards the intent of the weighting, not just that it runs.
     expect(WEIGHTS.sport).toBeGreaterThan(WEIGHTS.urgency);
   });
 });
@@ -266,14 +258,10 @@ describe("rankEvents", () => {
       makeEvent({ _id: "later", date: inDays(6) }),
       makeEvent({ _id: "sooner", date: inDays(5) }),
     ];
-    // Same everything but the date, so urgency separates them anyway; this
-    // asserts the earlier event is never ranked below the later one.
     expect(rankEvents(events, user, { now })[0]!._id).toBe("sooner");
   });
 
   it("orders identically regardless of input order", () => {
-    // Same score AND same date: without a final tiebreak the result would
-    // depend on input order, which makes paging unstable.
     const events = [
       makeEvent({ _id: "bbb", date: inDays(5) }),
       makeEvent({ _id: "aaa", date: inDays(5) }),

@@ -10,9 +10,6 @@ import type { Coords } from "@shared/api";
 
 vi.mock("../utils/api");
 
-// The picker needs a measurable container, which jsdom has no layout for.
-// A stub keeps this file about form behaviour; VenuePicker is covered by the
-// browser pass and by EventMap's own tests.
 vi.mock("../common/VenuePicker", () => ({
   default: ({ position, onPick }: { position: Coords | null; onPick: (c: Coords) => void }) => (
     <div data-testid="venue-picker">
@@ -32,7 +29,6 @@ const renderCreate = () =>
     extraRoutes: [{ path: "/events/:id", element: landmark("detail") }],
   });
 
-/** Fills every required field so a test can focus on one variable. */
 const fillForm = async (
   user: ReturnType<typeof userEvent.setup>,
   over: Partial<Record<"title" | "sport" | "date" | "location" | "maxPlayers", string>> = {}
@@ -101,7 +97,6 @@ describe("CreateEvent", () => {
 
   describe("location", () => {
     it("sends the address as a plain string when no pin is set", async () => {
-      // The server geocodes it in that case.
       const user = userEvent.setup();
       renderCreate();
       await fillForm(user);
@@ -115,8 +110,6 @@ describe("CreateEvent", () => {
     });
 
     it("sends coordinates alongside the address once a pin is dropped", async () => {
-      // A pin beats geocoding: an address resolves to a building centroid,
-      // which can be a few hundred metres off a pitch inside a park.
       const user = userEvent.setup();
       renderCreate();
       await fillForm(user);
@@ -192,7 +185,6 @@ describe("CreateEvent", () => {
       await user.click(screen.getByRole("button", { name: /use my location/i }));
 
       expect(await screen.findByText(/pinned at 13\.10000, 77\.70000/i)).toBeInTheDocument();
-      // Opening the map lets the user correct an imprecise fix.
       expect(screen.getByTestId("venue-picker")).toBeInTheDocument();
     });
   });
@@ -276,7 +268,6 @@ describe("CreateEvent", () => {
   });
 
   it("disables submit while the request is in flight", async () => {
-    // Otherwise an impatient double-click creates the event twice.
     let release: (v: unknown) => void = () => {};
     vi.mocked(api.createEvent).mockReturnValue(
       new Promise((r) => {
@@ -288,8 +279,6 @@ describe("CreateEvent", () => {
     renderCreate();
     await fillForm(user);
 
-    // fireEvent, not userEvent: userEvent waits for the DOM to settle after a
-    // click, which never happens while the request is deliberately pending.
     fireEvent.submit(document.querySelector("form") as HTMLFormElement);
 
     expect(await screen.findByRole("button", { name: /creating/i })).toBeDisabled();

@@ -2,11 +2,6 @@ import dotenv from "dotenv";
 
 dotenv.config({ quiet: true });
 
-/**
- * Fail loudly at boot if configuration is missing or unsafe, rather than
- * discovering it when the first request hits. A missing JWT_SECRET in
- * particular would otherwise make jwt.sign throw once per request.
- */
 const REQUIRED = ["MONGO_URI", "JWT_SECRET"] as const;
 
 const missing = REQUIRED.filter((key) => !process.env[key]);
@@ -19,8 +14,6 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-// Safe after the check above, but TypeScript can't see that across the
-// process.exit, so assert once here rather than at every use site.
 const jwtSecret = process.env.JWT_SECRET as string;
 const mongoUri = process.env.MONGO_URI as string;
 
@@ -49,7 +42,6 @@ export const config: Config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "1d",
   nodeEnv: process.env.NODE_ENV || "development",
   backendUrl: process.env.BACKEND_URL || "http://localhost:5000",
-  // Comma-separated list of origins permitted to call the API.
   clientOrigins: (process.env.CLIENT_ORIGINS || "http://localhost:5173")
     .split(",")
     .map((o) => o.trim())

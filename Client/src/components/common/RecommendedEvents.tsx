@@ -7,14 +7,6 @@ import { useGeolocation, formatDistance } from "../utils/useGeolocation";
 import { emojiForSport } from "../utils/sports";
 import "./RecommendedEvents.css";
 
-/**
- * Personalised event suggestions.
- *
- * Each card states why it was suggested. An unexplained ranking reads as
- * arbitrary — and worse, the user can't tell whether it's wrong. Showing the
- * reasons makes the ordering inspectable, and the score bar makes the relative
- * strength visible rather than implied by position alone.
- */
 const RecommendedEvents = ({ limit = 6 }: { limit?: number }) => {
   const [events, setEvents] = useState<RecommendedEventDTO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,8 +94,6 @@ const RecommendedEvents = ({ limit = 6 }: { limit?: number }) => {
                 </div>
               </div>
 
-              {/* Match strength, shown as a proportion rather than a raw number:
-                  "0.62" means nothing to a user, a filled bar does. */}
               <div className="rec-card__match" title={`Match score ${event.score}`}>
                 <div className="rec-card__match-bar">
                   <div

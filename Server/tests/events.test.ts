@@ -76,7 +76,6 @@ describe("GET /api/events", () => {
     await makeEvent(token, { sport: "Cricket" });
     await makeEvent(token, { sport: "Tennis" });
 
-    // Unescaped, ".*" would match every sport in the collection.
     const res = await api().get("/api/events?sport=.*");
     expect(res.body).toHaveLength(0);
   });
@@ -163,7 +162,7 @@ describe("POST /api/events/:id/join", () => {
     const host = await makeUser();
     const a = await makeUser();
     const b = await makeUser();
-    const ev = await makeEvent(host.token, { maxPlayers: 2 }); // host occupies one slot
+    const ev = await makeEvent(host.token, { maxPlayers: 2 });
 
     const first = await api()
       .post(`/api/events/${ev.body._id}/join`)
@@ -179,11 +178,9 @@ describe("POST /api/events/:id/join", () => {
 
   it("never exceeds maxPlayers under concurrent joins", async () => {
     const host = await makeUser();
-    const ev = await makeEvent(host.token, { maxPlayers: 3 }); // 2 slots left
+    const ev = await makeEvent(host.token, { maxPlayers: 3 });
     const joiners = await Promise.all([1, 2, 3, 4, 5, 6].map(() => makeUser()));
 
-    // A read-then-write implementation lets several of these pass the capacity
-    // check simultaneously and overfill the event.
     const results = await Promise.all(
       joiners.map((j: any) =>
         api()
@@ -204,7 +201,6 @@ describe("POST /api/events/:id/join", () => {
     const joiner = await makeUser();
     const ev = await makeEvent(host.token);
 
-    // Bypass validation to simulate time passing.
     await Event.findByIdAndUpdate(ev.body._id, { date: new Date(Date.now() - 3600000) });
 
     const res = await api()

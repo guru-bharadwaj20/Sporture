@@ -1,8 +1,3 @@
-/**
- * Error type for failures we expect and want to surface to the client.
- * Anything thrown that is NOT an AppError is treated as an unexpected bug by
- * the error handler and reported to the client as a generic 500.
- */
 export class AppError extends Error {
   readonly statusCode: number;
   readonly isOperational = true;
@@ -16,6 +11,5 @@ export class AppError extends Error {
   }
 }
 
-/** Narrows an unknown caught value to AppError. */
 export const isAppError = (err: unknown): err is AppError =>
   err instanceof AppError;

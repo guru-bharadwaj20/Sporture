@@ -11,9 +11,6 @@ export default defineConfig([
     files: ['**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
-      // Type-aware rules are deliberately not enabled: `tsc --noEmit` already
-      // runs in CI and covers the same ground far faster than linting with a
-      // full type graph.
       tseslint.configs.recommended,
       reactHooks.configs['recommended-latest'],
       reactRefresh.configs.vite,
@@ -28,8 +25,6 @@ export default defineConfig([
       },
     },
     rules: {
-      // TypeScript's own noUnusedLocals covers variables; this catches the
-      // rest while allowing the conventional _-prefixed intentional discard.
       '@typescript-eslint/no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^[A-Z_]' },

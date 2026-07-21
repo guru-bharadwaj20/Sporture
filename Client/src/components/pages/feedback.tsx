@@ -1,4 +1,3 @@
-// Client/src/components/pages/feedback.jsx
 import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
 import type { FeedbackDTO } from "@shared/api";
 import "./feedback.css";
@@ -6,8 +5,6 @@ import { getFeedback, postFeedback } from "../utils/api";
 import { apiErrorMessage } from "../utils/errors";
 
 const Feedback = () => {
-  // Name and email are no longer collected here — the server derives the
-  // author from the logged-in user so feedback can't be posted as someone else.
   const [form, setForm] = useState({
     rating: 0,
     comment: "",
@@ -63,7 +60,6 @@ const Feedback = () => {
       <div className="feedback-container">
         <h1 className="feedback-title">💬 User Feedback</h1>
 
-        {/* Feedback Form */}
         <form className="feedback-form" onSubmit={handleSubmit}>
           <div className="rating-section">
             <label>Rate your experience:</label>
@@ -99,7 +95,6 @@ const Feedback = () => {
           {message && <p className="feedback-message">{message}</p>}
         </form>
 
-        {/* Feedback List */}
         <div className="feedback-list">
           <h2>Recent Feedbacks</h2>
           {feedbackList.length === 0 ? (
@@ -116,8 +111,6 @@ const Feedback = () => {
                 </div>
                 <p className="feedback-comment">“{f.comment}”</p>
                 <div className="feedback-footer">
-                  {/* No email here: the public listing withholds it server-side
-                      (select("-email")), so rendering it showed a bare icon. */}
                   <small>📅 {new Date(f.createdAt).toLocaleDateString()}</small>
                 </div>
               </div>

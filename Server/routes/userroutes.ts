@@ -22,14 +22,12 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_UPLOAD_BYTES = 2 * 1024 * 1024; // 2 MB
+const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadDir),
   filename: (_req, file, cb) => {
     const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    // Derive the extension from the detected mimetype rather than trusting
-    // the client-supplied filename, which could carry a misleading extension.
     const ext =
       file.mimetype === "image/png" ? ".png"
       : file.mimetype === "image/webp" ? ".webp"
@@ -49,7 +47,6 @@ const upload = multer({
   },
 });
 
-/** Rejects the request unless the caller is acting on their own account. */
 const requireSelf = (req: Request, _res: Response, next: NextFunction): void => {
   if (req.user?._id.toString() !== req.params.id) {
     return next(new AppError("You can only modify your own profile", 403));
@@ -57,10 +54,8 @@ const requireSelf = (req: Request, _res: Response, next: NextFunction): void => 
   next();
 };
 
-/* ---------------------- GET PUBLIC PROFILE ---------------------- */
 router.get("/:id", auth, validate(idParamSchema, "params"), async (req, res, next) => {
   try {
-    // Only fields that are safe for another user to see.
     const user = await User.findById(req.params.id).select(
       "name favSports skillLevel rating gamesPlayed eventsHosted photoURL memberSince city bio"
     );
@@ -71,7 +66,6 @@ router.get("/:id", auth, validate(idParamSchema, "params"), async (req, res, nex
   }
 });
 
-/* -------------------------- UPDATE SELF -------------------------- */
 router.put(
   "/:id",
   auth,
@@ -80,8 +74,6 @@ router.put(
   validate(updateProfileSchema),
   async (req, res, next) => {
     try {
-      // req.body has been stripped to the allowlisted fields by `validate`,
-      // so this cannot be used to overwrite password, email or rating.
       const updated = await User.findByIdAndUpdate(
         req.params.id,
         req.body as UpdateProfileInput,
@@ -95,7 +87,6 @@ router.put(
   }
 );
 
-/* ---------------------- UPLOAD PROFILE PHOTO ---------------------- */
 router.post(
   "/:id/upload-photo",
   auth,

@@ -11,7 +11,6 @@ const signToken = (userId: Types.ObjectId | string): string =>
     expiresIn: config.jwtExpiresIn,
   } as jwt.SignOptions);
 
-/* ----------------------- REGISTER ----------------------- */
 export const register = async (
   req: Request,
   res: Response,
@@ -25,7 +24,6 @@ export const register = async (
       throw new AppError("An account with that email already exists", 409);
     }
 
-    // Password is hashed by the pre-save hook on the User model.
     const user = await User.create({ name, email, password, favSports, skillLevel });
 
     const safeUser = user.toObject();
@@ -41,7 +39,6 @@ export const register = async (
   }
 };
 
-/* ------------------------ LOGIN ------------------------ */
 export const login = async (
   req: Request,
   res: Response,
@@ -50,11 +47,8 @@ export const login = async (
   try {
     const { email, password } = req.body as LoginInput;
 
-    // password has `select: false` on the schema, so ask for it explicitly.
     const user = await User.findOne({ email }).select("+password");
 
-    // Same message and code for "no such user" and "wrong password" so the
-    // endpoint can't be used to enumerate registered emails.
     if (!user || !(await user.comparePassword(password))) {
       throw new AppError("Invalid credentials", 401);
     }
@@ -72,7 +66,6 @@ export const login = async (
   }
 };
 
-/* -------------------- CURRENT USER -------------------- */
 export const getCurrentUser = async (
   req: Request,
   res: Response,

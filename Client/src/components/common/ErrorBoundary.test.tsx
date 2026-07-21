@@ -4,7 +4,6 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import ErrorBoundary from "./ErrorBoundary";
 
-/** Throws on first render, then recovers — used to test the retry path. */
 const Bomb = ({ shouldThrow }: { shouldThrow: boolean }) => {
   if (shouldThrow) throw new Error("kaboom from render");
   return <p>Recovered content</p>;
@@ -12,8 +11,6 @@ const Bomb = ({ shouldThrow }: { shouldThrow: boolean }) => {
 
 describe("ErrorBoundary", () => {
   beforeEach(() => {
-    // React logs caught render errors to console.error; silence it so the
-    // test output isn't misleading noise.
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -31,8 +28,6 @@ describe("ErrorBoundary", () => {
   });
 
   it("shows a fallback instead of a blank page when a child throws", () => {
-    // The whole point: without this, React unmounts the tree and the user
-    // sees an empty document with no explanation.
     render(
       <ErrorBoundary>
         <Bomb shouldThrow />
@@ -93,7 +88,6 @@ describe("ErrorBoundary", () => {
     render(<Harness />);
     expect(screen.getByRole("alert")).toBeInTheDocument();
 
-    // Remove the cause, then clear the boundary's captured error.
     await user.click(screen.getByRole("button", { name: /fix it/i }));
     await user.click(screen.getByRole("button", { name: /try again/i }));
 

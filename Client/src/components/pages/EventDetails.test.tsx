@@ -8,7 +8,6 @@ import type { EventDTO } from "@shared/api";
 
 vi.mock("../utils/api");
 
-// The map needs a measurable container; it has its own tests.
 vi.mock("../common/EventMap", () => ({
   default: ({ events }: { events: EventDTO[] }) => (
     <div data-testid="event-map">{events.length} pins</div>
@@ -97,7 +96,6 @@ describe("EventDetails", () => {
   });
 
   it("does not leak player email addresses", async () => {
-    // The public endpoint withholds them; the UI must not imply otherwise.
     mockEvent(makeEvent());
     const { container } = renderDetails();
 

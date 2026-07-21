@@ -1,0 +1,14 @@
+.git
+.github
+docs
+**/node_modules
+**/dist
+**/coverage
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
+Server
+docker-compose.yml
+README.md
+LICENSE

@@ -1,4 +1,3 @@
-// src/pages/LandingPage.jsx
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LandingPage.css';
@@ -6,12 +5,11 @@ import './LandingPage.css';
 const LandingPage = () => {
   const navigate = useNavigate();
 
-  // Create MORE VISIBLE floating sports particles
   useEffect(() => {
     const particles = ['⚽', '🏀', '🎾', '🏈', '⚾', '🏐', '🏸', '⛳', '🥊'];
     const container = document.querySelector('.landing-container');
     if (!container) return;
-    
+
     particles.forEach((emoji) => {
       const particle = document.createElement('div');
       particle.className = 'particle';
@@ -65,15 +63,14 @@ const LandingPage = () => {
             Join thousands of athletes already playing!
           </p>
           <div className="cta-buttons">
-            <button 
-              onClick={() => navigate('/register')} 
+            <button
+              onClick={() => navigate('/register')}
               className="cta-button"
             >
               Get Started Free
             </button>
-            {/* ✅ Changed from /events to actual discovery route */}
-            <button 
-              onClick={() => navigate('/events')} 
+            <button
+              onClick={() => navigate('/events')}
               className="cta-button cta-secondary"
             >
               Browse Events
@@ -81,7 +78,6 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* Sports Showcase */}
         <section className="sports-showcase">
           {sports.map((sport, index) => (
             <div key={index} className="sport-item">
@@ -91,7 +87,6 @@ const LandingPage = () => {
           ))}
         </section>
 
-        {/* Features */}
         <section className="features">
           <div className="feature-card">
             <span className="feature-icon">🎮</span>
@@ -110,12 +105,11 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* Testimonial Section */}
         <section className="testimonial-section">
           <h2>What Players Say</h2>
           <p className="testimonial-text">
-            "Sporture has completely transformed how I find sports partners. 
-            I've met amazing people and never miss a game anymore. It's like having 
+            "Sporture has completely transformed how I find sports partners.
+            I've met amazing people and never miss a game anymore. It's like having
             a sports community in your pocket!"
           </p>
           <div className="testimonial-author">Alex Johnson</div>

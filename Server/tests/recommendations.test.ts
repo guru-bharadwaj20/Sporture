@@ -11,8 +11,6 @@ describe("GET /api/events/recommended", () => {
   });
 
   it("is not shadowed by the /:id route", async () => {
-    // "recommended" is a valid path segment where an id is expected, so a
-    // wrongly-ordered router would try to cast it to an ObjectId and 400.
     const { token } = await makeUser();
     const res = await recommend(token);
 
@@ -78,7 +76,6 @@ describe("GET /api/events/recommended", () => {
       const filler = await makeUser();
       const viewer = await makeUser();
 
-      // maxPlayers 2, host occupies one slot, filler takes the other.
       const ev = await makeEvent(host.token, { title: "Full", maxPlayers: 2 });
       await api()
         .post(`/api/events/${ev.body._id}/join`)
@@ -135,7 +132,6 @@ describe("GET /api/events/recommended", () => {
       await makeEvent(host.token, { title: "Distant future", date: futureDate(60) });
 
       const res = await recommend(viewer.token);
-      // With every other signal neutral, urgency decides.
       expect(res.body.events[0].title).toBe("Soon");
     });
 
@@ -157,7 +153,6 @@ describe("GET /api/events/recommended", () => {
     it("honours the limit parameter", async () => {
       const host = await makeUser();
       const viewer = await makeUser();
-      // Titles must clear the 3-character minimum in createEventSchema.
       for (let i = 0; i < 5; i++) {
         const created = await makeEvent(host.token, { title: `Event number ${i}` });
         expect(created.status).toBe(201);
@@ -165,7 +160,7 @@ describe("GET /api/events/recommended", () => {
 
       const res = await recommend(viewer.token, { limit: 2 });
       expect(res.body.events).toHaveLength(2);
-      expect(res.body.count).toBe(5); // total considered, before slicing
+      expect(res.body.count).toBe(5);
     });
 
     it("rejects lat without lng", async () => {
@@ -192,13 +187,11 @@ describe("GET /api/events/recommended", () => {
       const stranger = await makeUser();
       const viewer = await makeUser({ favSports: [] });
 
-      // Shared history: viewer and teammate both join the same past event.
       const shared = await makeEvent(host.token, { title: "Shared history" });
       for (const t of [viewer.token, teammate.token]) {
         await api().post(`/api/events/${shared.body._id}/join`).set("Authorization", `Bearer ${t}`);
       }
 
-      // Two comparable candidates, distinguished only by who is in them.
       const withFriend = await makeEvent(host.token, { title: "With friend", date: futureDate(5) });
       const withStranger = await makeEvent(host.token, { title: "With stranger", date: futureDate(5) });
 
@@ -223,15 +216,11 @@ describe("GET /api/events/recommended", () => {
       const hostB = await makeUser();
       const viewer = await makeUser({ favSports: [] });
 
-      // Viewer joins one of hostA's events, so their own id lands in the set
-      // of people present at events they've attended.
       const past = await makeEvent(hostA.token, { title: "Already attended" });
       await api()
         .post(`/api/events/${past.body._id}/join`)
         .set("Authorization", `Bearer ${viewer.token}`);
 
-      // A candidate hosted by someone unrelated: the only id the viewer could
-      // possibly "recognise" is their own, which must not count.
       const fresh = await makeEvent(hostB.token, {
         title: "Unrelated candidate",
         date: futureDate(5),
@@ -245,8 +234,6 @@ describe("GET /api/events/recommended", () => {
     });
 
     it("does count a genuine past teammate", async () => {
-      // Counterpart to the test above: proves the zero there is real
-      // self-exclusion rather than the signal being broken outright.
       const host = await makeUser();
       const viewer = await makeUser({ favSports: [] });
 

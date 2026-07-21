@@ -1,4 +1,3 @@
-/* EventDetails.css */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 * {
@@ -21,7 +20,6 @@ body.event-details-active {
   padding: 60px 20px 80px;
 }
 
-/* Animated Gradient Background */
 .event-details-page::before {
   content: '';
   position: fixed;
@@ -45,7 +43,6 @@ body.event-details-active {
   50% { background-position: 100% 50%; }
 }
 
-/* Floating Particles */
 .event-details-page::after {
   content: '⚽🏀🎾🏈⚾🏐🏸';
   position: fixed;
@@ -67,7 +64,6 @@ body.event-details-active {
   100% { transform: translateY(-200px) rotate(360deg); }
 }
 
-/* Back Button */
 .back-button {
   display: inline-flex;
   align-items: center;
@@ -106,7 +102,6 @@ body.event-details-active {
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
 }
 
-/* Main Container */
 .event-details-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -124,7 +119,6 @@ body.event-details-active {
   }
 }
 
-/* Hero Section */
 .event-hero {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
@@ -186,7 +180,6 @@ body.event-details-active {
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
-/* Info Grid */
 .event-info-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -194,7 +187,6 @@ body.event-details-active {
   margin-bottom: 30px;
 }
 
-/* Main Info Card */
 .event-main-info {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
@@ -261,7 +253,6 @@ body.event-details-active {
   color: #1e293b;
 }
 
-/* Players Section */
 .players-capacity {
   display: flex;
   justify-content: space-between;
@@ -366,14 +357,12 @@ body.event-details-active {
   color: #1e293b;
 }
 
-/* Sidebar */
 .event-sidebar {
   display: flex;
   flex-direction: column;
   gap: 30px;
 }
 
-/* Host Card */
 .host-card {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
@@ -419,7 +408,6 @@ body.event-details-active {
   letter-spacing: 0.5px;
 }
 
-/* Location Card */
 .location-card {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
@@ -449,7 +437,6 @@ body.event-details-active {
   line-height: 1.6;
 }
 
-/* Loading State */
 .loading-state,
 .error-state {
   display: flex;
@@ -481,7 +468,6 @@ body.event-details-active {
   text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
 }
 
-/* Responsive Design */
 @media (max-width: 1024px) {
   .event-info-grid {
     grid-template-columns: 1fr;
@@ -539,7 +525,7 @@ body.event-details-active {
     gap: 8px;
   }
 }
-/* The embedded map replaces the placeholder; keep it inside the card. */
+
 .location-card .event-map {
   margin: 0 0 14px;
   border-radius: 14px;

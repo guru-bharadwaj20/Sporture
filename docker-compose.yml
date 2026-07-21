@@ -1,19 +1,9 @@
-# Full local stack: database, API, web. No Atlas account, no manual setup.
-#
-#   docker compose up --build          start everything
-#   docker compose --profile seed up seed   load demo data (once)
-#   docker compose down -v             stop and delete the database
-#
-# The app is then on http://localhost:8080.
-
 services:
   mongo:
     image: mongo:7
     restart: unless-stopped
     volumes:
       - mongo-data:/data/db
-    # Not published to the host by default — nothing outside the compose
-    # network needs it, and binding 27017 would collide with a local install.
     expose:
       - "27017"
     healthcheck:
@@ -25,18 +15,14 @@ services:
 
   api:
     build:
-      context: ./Sporture/Server
+      context: ./Server
     restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: "5000"
       MONGO_URI: mongodb://mongo:27017/sporture
-      # Dev-only placeholder. It satisfies the 32-character minimum the server
-      # enforces at boot; a real deployment must supply its own.
       JWT_SECRET: ${JWT_SECRET:-docker-compose-development-secret-not-for-production-use}
       JWT_EXPIRES_IN: 1d
-      # Requests reach the API through the nginx proxy, so the browser's origin
-      # is the web container's.
       CLIENT_ORIGINS: http://localhost:8080
       BACKEND_URL: http://localhost:8080
     volumes:
@@ -49,12 +35,9 @@ services:
 
   web:
     build:
-      # Context is Sporture/ rather than Sporture/Client because the client
-      # imports the API contract from ../shared.
-      context: ./Sporture
+      context: .
       dockerfile: Client/Dockerfile
       args:
-        # Empty: the client calls /api on its own origin, which nginx proxies.
         VITE_API_URL: ""
     restart: unless-stopped
     ports:
@@ -63,13 +46,11 @@ services:
       api:
         condition: service_healthy
 
-  # One-shot demo data loader. Behind a profile so `docker compose up` doesn't
-  # silently rewrite the database on every start.
   seed:
     profiles: ["seed"]
     build:
-      context: ./Sporture/Server
-      target: build # the build stage still has devDependencies, and so tsx
+      context: ./Server
+      target: build
     environment:
       MONGO_URI: mongodb://mongo:27017/sporture
       JWT_SECRET: ${JWT_SECRET:-docker-compose-development-secret-not-for-production-use}

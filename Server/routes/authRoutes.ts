@@ -10,7 +10,6 @@ const router = express.Router();
 router.post("/register", authLimiter, validate(registerSchema), register);
 router.post("/login", authLimiter, validate(loginSchema), login);
 
-// Protected: returns the user associated with the Bearer token
 router.get("/me", auth, getCurrentUser);
 
 export default router;

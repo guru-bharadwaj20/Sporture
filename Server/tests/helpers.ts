@@ -13,7 +13,6 @@ export interface TestUser {
   user: { _id: string; name: string; email: string; [key: string]: unknown };
 }
 
-/** Registers a fresh user and returns their token, id and credentials. */
 export const makeUser = async (
   overrides: Record<string, unknown> = {}
 ): Promise<TestUser> => {
@@ -38,16 +37,9 @@ export const makeUser = async (
   };
 };
 
-/** A date `days` in the future, for events that must not be in the past. */
 export const futureDate = (days = 1): string =>
   new Date(Date.now() + days * 86400000).toISOString();
 
-/**
- * Coordinates are always passed explicitly so tests never hit the live
- * geocoding service — that would make the suite slow, flaky and dependent on
- * network access in CI. The geocoding path itself is tested separately with
- * fetch stubbed out.
- */
 export const BENGALURU = {
   address: "Chinnaswamy Stadium, Bengaluru",
   lat: 12.9788,
@@ -70,9 +62,8 @@ export const makeEvent = (
       ...overrides,
     });
 
-/** Builds a location `km` kilometres north of Bengaluru. */
 export const locationNorthOf = (km: number, address = `${km}km north`) => ({
   address,
-  lat: BENGALURU.lat + km / 111, // ~111 km per degree of latitude
+  lat: BENGALURU.lat + km / 111,
   lng: BENGALURU.lng,
 });

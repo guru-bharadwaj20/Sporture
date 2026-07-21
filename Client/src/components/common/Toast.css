@@ -2,12 +2,12 @@
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 9999; /* above Leaflet controls (1000) and every page chrome */
+  z-index: 9999;
   display: flex;
   flex-direction: column;
   gap: 12px;
   max-width: min(420px, calc(100vw - 40px));
-  pointer-events: none; /* the region itself must not block the page */
+  pointer-events: none;
 }
 
 .toast {
@@ -19,7 +19,7 @@
   border-radius: 14px;
   border-left: 5px solid #94a3b8;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
-  pointer-events: auto; /* but each toast is interactive */
+  pointer-events: auto;
   animation: toastIn 0.28s cubic-bezier(0.21, 1.02, 0.73, 1);
 }
 
@@ -57,7 +57,7 @@
   font-weight: 600;
   line-height: 1.5;
   color: #1e293b;
-  /* Validation failures arrive as several newline-separated lines. */
+
   white-space: pre-line;
   word-break: break-word;
 }

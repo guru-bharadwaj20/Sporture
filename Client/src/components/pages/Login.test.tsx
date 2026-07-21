@@ -65,8 +65,6 @@ describe("Login", () => {
   });
 
   it("prefers the server's own record over the login payload", async () => {
-    // /auth/me is authoritative; the login response can be stale if the
-    // profile changed on another device.
     const fresher = makeUser({ name: "Renamed On Server" });
     vi.mocked(api.getCurrentUser).mockResolvedValue({
       data: { success: true, user: fresher },
@@ -89,7 +87,6 @@ describe("Login", () => {
     await fillCredentials(user);
     await user.click(screen.getByRole("button", { name: /login|sign in/i }));
 
-    // A flaky /me must not block a successful login.
     await waitFor(() => expect(getStoredUser()?._id).toBe(account._id));
     vi.restoreAllMocks();
   });

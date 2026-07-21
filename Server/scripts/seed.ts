@@ -1,4 +1,3 @@
-// Server/scripts/seed.js
 import mongoose, { type Types } from "mongoose";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
@@ -9,11 +8,8 @@ import Event from "../models/Event.js";
 
 const MONGO = process.env.MONGO_URI || "mongodb://localhost:27017/sporturedb";
 
-// Shared password for every seeded dev account. Overridable so the value never
-// has to be hardcoded when seeding a shared environment.
 const SEED_PASSWORD = process.env.SEED_PASSWORD || "Password123!";
 
-/** Days from today, at a given hour — keeps seeded events perpetually upcoming. */
 const daysFromNow = (days: number, hour = 18, minute = 0): Date => {
   const d = new Date();
   d.setDate(d.getDate() + days);
@@ -21,10 +17,6 @@ const daysFromNow = (days: number, hour = 18, minute = 0): Date => {
   return d;
 };
 
-/**
- * 1) Users to ensure exist (upsert by email).
- *    You can trim fields if you want; these are fine for dev seeding.
- */
 const usersSeed = [
   {
     name: "Radha Raman",
@@ -158,9 +150,6 @@ const usersSeed = [
   },
 ];
 
-/**
- * 2) Events defined using emails (we'll map to ObjectIds after upserting users).
- */
 const eventsByEmail = [
   {
     title: "Blore vs Hyd",
@@ -275,12 +264,9 @@ const eventsByEmail = [
 async function upsertUsersAndGetMap(): Promise<Map<string, Types.ObjectId>> {
   const emailToId = new Map<string, Types.ObjectId>();
 
-  // Hash once and reuse: findOneAndUpdate does NOT trigger the pre("save")
-  // hook on the User model, so hashing has to be explicit here.
   const hashed = await bcrypt.hash(SEED_PASSWORD, 12);
 
   for (const u of usersSeed) {
-    // upsert by email; only set fields on insert so you don't overwrite your manual edits later
     const doc = await User.findOneAndUpdate(
       { email: u.email },
       { $setOnInsert: { ...u, password: hashed } },
@@ -295,36 +281,28 @@ async function upsertUsersAndGetMap(): Promise<Map<string, Types.ObjectId>> {
 async function run() {
   try {
     await mongoose.connect(MONGO);
-    // Never log MONGO directly — the connection string embeds the password,
-    // which would then sit in terminal scrollback and CI logs.
     console.log(`✅ Connected to MongoDB (${mongoose.connection.name})`);
 
-    // 1) Upsert users and build email -> ObjectId map
     console.log("👤 Ensuring users exist...");
     const emailToId = await upsertUsersAndGetMap();
     console.log("✅ Users ready. Total:", emailToId.size);
 
-    // 2) Clear events
     console.log("🧹 Clearing existing events...");
     await Event.deleteMany({});
 
-    // 3) Build events with ObjectId references
     const events = eventsByEmail.map((e) => ({
       title: e.title,
       sport: e.sport,
       date: e.date,
-      // Coordinates are supplied inline so seeding never depends on the
-      // geocoding service being reachable.
       location: {
         address: e.location.address,
         geo: { type: "Point", coordinates: [e.location.lng, e.location.lat] },
       },
       maxPlayers: e.maxPlayers,
-      createdBy: emailToId.get(e.createdByEmail), // ObjectId
-      currentPlayers: (e.playerEmails || []).map((em) => emailToId.get(em)), // [ObjectId]
+      createdBy: emailToId.get(e.createdByEmail),
+      currentPlayers: (e.playerEmails || []).map((em) => emailToId.get(em)),
     }));
 
-    // sanity: ensure no undefined ObjectIds
     for (const ev of events) {
       if (!ev.createdBy) {
         throw new Error(`Missing user for createdBy in event "${ev.title}". Check email.`);
@@ -334,12 +312,10 @@ async function run() {
       }
     }
 
-    // 4) Insert
     console.log("📥 Inserting events...");
     const inserted = await Event.insertMany(events, { ordered: true });
     console.log(`🎉 Inserted ${inserted.length} events.`);
 
-    // 5) Verify
     const count = await Event.countDocuments();
     console.log("📊 Current event count:", count);
 

@@ -1,11 +1,10 @@
-// src/components/pages/EventDetails.jsx
 import { useState, useEffect } from "react";
 import { apiErrorMessage } from "../utils/errors";
 import type { EventDTO } from "@shared/api";
 import { useParams, useNavigate } from "react-router-dom";
 import { getEventById } from "../utils/api";
 import EventMap from "../common/EventMap";
-import "./EventDetails.css"; // ✅ Import the CSS file
+import "./EventDetails.css";
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -14,9 +13,8 @@ const EventDetails = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // ✅ Add body class for background
     document.body.classList.add("event-details-active");
-    
+
     return () => {
       document.body.classList.remove("event-details-active");
     };
@@ -99,24 +97,20 @@ const EventDetails = () => {
       </button>
 
       <div className="event-details-container">
-        {/* Hero Section */}
         <div className="event-hero">
           <span className="event-icon-large">{getSportIcon(sport)}</span>
           <h1 className="event-title-main">{title}</h1>
           <span className="event-sport-badge">{sport}</span>
         </div>
 
-        {/* Info Grid */}
         <div className="event-info-grid">
-          {/* Main Info */}
           <div className="event-main-info">
-            {/* Event Details Section */}
             <div className="info-section">
               <h2 className="section-title">
                 <span className="section-icon">ℹ️</span>
                 Event Details
               </h2>
-              
+
               <div className="info-row">
                 <span className="info-icon">📅</span>
                 <div className="info-content">
@@ -154,13 +148,12 @@ const EventDetails = () => {
               </div>
             </div>
 
-            {/* Players Section */}
             <div className="info-section">
               <h2 className="section-title">
                 <span className="section-icon">👥</span>
                 Players
               </h2>
-              
+
               <div className="players-capacity">
                 <span className="capacity-text">
                   {spotsFilled} / {maxPlayers} Players
@@ -171,8 +164,8 @@ const EventDetails = () => {
               </div>
 
               <div className="progress-bar-wrapper">
-                <div 
-                  className="progress-fill" 
+                <div
+                  className="progress-fill"
                   style={{ width: `${progressPercentage}%` }}
                 ></div>
               </div>
@@ -196,9 +189,7 @@ const EventDetails = () => {
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="event-sidebar">
-            {/* Host Card */}
             <div className="host-card">
               <div className="host-avatar-large">
                 {getHostInitials(createdBy?.name)}
@@ -207,7 +198,6 @@ const EventDetails = () => {
               <p className="host-label">Event Host</p>
             </div>
 
-            {/* Location Card */}
             <div className="location-card">
               <h3 className="section-title">
                 <span className="section-icon">🗺️</span>
