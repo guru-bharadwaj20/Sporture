@@ -1,5 +1,13 @@
 # Sporture
 
+<p align="center">
+  <a href="Sporture%20Demo.mp4">
+    <img src="docs/Sporture%20Demo%20thumbnail.png" alt="Watch the Sporture demo video" width="720">
+  </a>
+  <br>
+  <sub>▶ <b><a href="Sporture%20Demo.mp4">Watch the Sporture demo</a></b> (74 s): the day-one plan, all 18 commits, the CI run, the README quick start on a fresh clone, and 12 live steps through the web app and the API</sub>
+</p>
+
 **Find and join local sports events near you — ranked by real distance from a MongoDB `2dsphere` index, then personalised per player.**
 
 [![CI](https://img.shields.io/badge/CI-typecheck_·_lint_·_test_·_build-2ea44f?logo=githubactions&logoColor=white)](.github/workflows)
